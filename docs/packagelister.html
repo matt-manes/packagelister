@@ -34,9 +34,9 @@ from pathcrawler import crawl
 from printbuddies import ProgBar
 
 
-def scan(project_dir: Path | str = None) -&gt; dict:
+def scan(project_dir: Path | str = None, include_builtins: bool = False) -&gt; dict:
     &#34;&#34;&#34;Recursively scans a directory for python files to determine
-    what 3rd-party packages are in use, as well as the version number
+    what packages are in use, as well as the version number
     if applicable.
 
     Returns a dictionary where the keys are package
@@ -71,7 +71,7 @@ def scan(project_dir: Path | str = None) -&gt; dict:
     if len(files) == 1:
         bar.counter = 1
     packages = {}
-    standard_lib = list(sys.stdlib_module_names)
+    standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f&#34;Scanning {file.name}&#34;)
         contents = [
@@ -109,11 +109,11 @@ def scan(project_dir: Path | str = None) -&gt; dict:
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="packagelister.packagelister.scan"><code class="name flex">
-<span>def <span class="ident">scan</span></span>(<span>project_dir: pathlib.Path | str = None) ‑> dict</span>
+<span>def <span class="ident">scan</span></span>(<span>project_dir: pathlib.Path | str = None, include_builtins: bool = False) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Recursively scans a directory for python files to determine
-what 3rd-party packages are in use, as well as the version number
+what packages are in use, as well as the version number
 if applicable.</p>
 <p>Returns a dictionary where the keys are package
 names and the values are the version number of the package if there is one
@@ -129,9 +129,9 @@ If the path doesn't exist, an empty dictionary is returned.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def scan(project_dir: Path | str = None) -&gt; dict:
+<pre><code class="python">def scan(project_dir: Path | str = None, include_builtins: bool = False) -&gt; dict:
     &#34;&#34;&#34;Recursively scans a directory for python files to determine
-    what 3rd-party packages are in use, as well as the version number
+    what packages are in use, as well as the version number
     if applicable.
 
     Returns a dictionary where the keys are package
@@ -166,7 +166,7 @@ If the path doesn't exist, an empty dictionary is returned.</p></div>
     if len(files) == 1:
         bar.counter = 1
     packages = {}
-    standard_lib = list(sys.stdlib_module_names)
+    standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f&#34;Scanning {file.name}&#34;)
         contents = [

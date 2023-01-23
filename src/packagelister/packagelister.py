@@ -6,9 +6,9 @@ from pathcrawler import crawl
 from printbuddies import ProgBar
 
 
-def scan(project_dir: Path | str = None) -> dict:
+def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict:
     """Recursively scans a directory for python files to determine
-    what 3rd-party packages are in use, as well as the version number
+    what packages are in use, as well as the version number
     if applicable.
 
     Returns a dictionary where the keys are package
@@ -43,7 +43,7 @@ def scan(project_dir: Path | str = None) -> dict:
     if len(files) == 1:
         bar.counter = 1
     packages = {}
-    standard_lib = list(sys.stdlib_module_names)
+    standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f"Scanning {file.name}")
         contents = [

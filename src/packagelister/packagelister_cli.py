@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from .packagelister import scan
+from packagelister import scan
 
 
 def main():
@@ -9,8 +9,8 @@ def main():
         parser = argparse.ArgumentParser()
 
         parser.add_argument(
-            "-p",
-            "--project_path",
+            "project_path",
+            nargs="?",
             type=str,
             default=None,
             help=""" The project directory path to scan. """,
@@ -30,6 +30,13 @@ def main():
             help=""" Generate a requirements.txt file in --project_path. """,
         )
 
+        parser.add_argument(
+            "-ib",
+            "--include_builtins",
+            action="store_true",
+            help=""" Include built in standard library modules. """,
+        )
+
         args = parser.parse_args()
 
         if not args.project_path:
@@ -42,7 +49,7 @@ def main():
         return args
 
     args = get_args()
-    packages = scan(args.project_path)
+    packages = scan(args.project_path, args.include_builtins)
     if args.generate_requirements:
         req_path = args.project_path / "requirements.txt"
         req_path.write_text(

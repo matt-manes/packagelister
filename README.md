@@ -42,13 +42,16 @@ printbuddies==0.2.2    src\packagelister\packagelister.py
 Cli help:
 <pre>
 >packagelister -h
-usage: packagelister [-h] [-p PROJECTPATH] [-sf] [-gr]
+usage: packagelister_cli.py [-h] [-sf] [-gr] [-ib] [project_path]
+
+positional arguments:
+  project_path          The project directory path to scan.
 
 options:
   -h, --help            show this help message and exit
-  -p PROJECTPATH, --project_path PROJECTPATH
-                        The project directory path to scan.
-  -sf, --show_files      Show which files imported each of the packages.
+  -sf, --show_files     Show which files imported each of the packages.
   -gr, --generate_requirements
                         Generate a requirements.txt file in --project_path.
+  -ib, --include-builtins
+                        Include built in standard library modules.
 </pre>
