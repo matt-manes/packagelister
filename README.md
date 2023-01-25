@@ -1,5 +1,5 @@
 # packagelister
-Determine what 3rd-party packages and versions a project imports. <br>
+Determine what packages and versions a project imports. <br>
 Install with:
 <pre>pip install packagelister</pre>
 
