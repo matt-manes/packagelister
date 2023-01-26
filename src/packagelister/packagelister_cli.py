@@ -17,21 +17,21 @@ def main():
         )
 
         parser.add_argument(
-            "-sf",
+            "-s",
             "--show_files",
             action="store_true",
             help=""" Show which files imported each of the packages. """,
         )
 
         parser.add_argument(
-            "-gr",
+            "-g",
             "--generate_requirements",
             action="store_true",
             help=""" Generate a requirements.txt file in --project_path. """,
         )
 
         parser.add_argument(
-            "-ib",
+            "-i",
             "--include_builtins",
             action="store_true",
             help=""" Include built in standard library modules. """,
