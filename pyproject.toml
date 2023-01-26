@@ -12,18 +12,18 @@ dependencies = [
 
 	"pathcrawler~=2.0.0",
 	"printbuddies~=1.0.0"
-]
+    ]
 readme = "README.md"
 keywords = [
 	"package",
 	"import",
 	"module"
-]
+    ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-]
+    ]
 
 [project.urls]
 "Homepage" = "https://github.com/matt-manes/packagelister"
@@ -36,7 +36,7 @@ packagelister = "packagelister.packagelister_cli:main"
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
-]
+    ]
 pythonpath = "src"
 
 [tool.hatch.build.targets.sdist]
@@ -45,4 +45,4 @@ exclude = [
     ".pytest_cache",
     ".vscode",
     "tests"
-]
+    ]
