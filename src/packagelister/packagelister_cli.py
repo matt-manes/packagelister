@@ -54,7 +54,7 @@ def main():
         req_path = args.project_path / "requirements.txt"
         req_path.write_text(
             "\n".join(
-                f"{package}=={packages[package]['version']}"
+                f"{package}~={packages[package]['version']}"
                 if packages[package]["version"]
                 else package
                 for package in sorted(packages)
