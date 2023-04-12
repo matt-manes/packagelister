@@ -31,6 +31,17 @@ def main():
         )
 
         parser.add_argument(
+            "-v",
+            "--versions",
+            type=str,
+            default=None,
+            choices=["==", "<", "<=", ">", ">=", "~="],
+            help=""" When generating a requirements.txt file,
+            include the versions of the packages using this
+            relation.""",
+        )
+
+        parser.add_argument(
             "-i",
             "--include_builtins",
             action="store_true",
@@ -54,7 +65,9 @@ def main():
         req_path = args.project_path / "requirements.txt"
         req_path.write_text(
             "\n".join(
-                f"{package}~={packages[package]['version']}"
+                f"{package}{args.versions}{packages[package]['version']}"
+                if args.versions
+                else f"{package}"
                 if packages[package]["version"]
                 else package
                 for package in sorted(packages)
