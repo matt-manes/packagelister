@@ -1,10 +1,24 @@
 # Changelog
 
-## 1.2.0 (2023-04-12)
+## 1.3.0 (2023-04-15)
+
+#### New Features
+
+* add whosuses to scripts table
+#### Refactorings
+
+* move bulk of work into seperate function
+
+
+## v1.2.0 (2023-04-12)
 
 #### New Features
 
 * add switch to add package versions with chosen relation when generating requirements.txt
+#### Others
+
+* build v1.2.0
+* update changelog
 
 
 ## v1.1.3 (2023-03-22)
