@@ -28,6 +28,7 @@ classifiers = [
 
 [project.scripts]
 packagelister = "packagelister.packagelister_cli:main"
+whouses = "packagelister.whouses:main"
 
 [tool.pytest.ini_options]
 addopts = [
