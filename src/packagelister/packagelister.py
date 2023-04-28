@@ -38,7 +38,7 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
     else:
         files = [file for file in crawl(project_dir) if file.suffix == ".py"]
 
-    bar = ProgBar(len(files) - 1, width_ratio=0.33)
+    bar = ProgBar(len(files), width_ratio=0.33)
     # If scanning one file, the progress bar will show 0% complete if bar.counter == 0
     if len(files) == 1:
         bar.counter = 1
