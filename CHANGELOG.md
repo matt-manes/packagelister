@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.3.0 (2023-04-15)
+## 1.3.1 (2023-04-28)
+
+#### Fixes
+
+* update printbuddies.ProgBar usage to new version
+
+
+## v1.3.0 (2023-04-15)
 
 #### New Features
 
@@ -8,6 +15,10 @@
 #### Refactorings
 
 * move bulk of work into seperate function
+#### Others
+
+* build v1.3.0
+* update changelog
 
 
 ## v1.2.0 (2023-04-12)
