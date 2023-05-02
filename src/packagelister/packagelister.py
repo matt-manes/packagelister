@@ -3,7 +3,6 @@ import inspect
 import sys
 from pathlib import Path
 
-from pathcrawler import crawl
 from printbuddies import ProgBar
 
 
@@ -14,7 +13,6 @@ def get_packages_from_source(source: str) -> list[str]:
         for line in source.split("\n")
         if line.startswith(("from", "import"))
     ]
-    # print(import_lines)
     packages = []
     for line in import_lines:
         module = None
@@ -40,6 +38,12 @@ def get_packages_from_source(source: str) -> list[str]:
     return packages
 
 
+def remove_builtins(packages: list[str]) -> list[str]:
+    """Remove built in packages/modules from a list of package names."""
+    builtins = list(sys.stdlib_module_names)
+    return filter(lambda x: x not in builtins, packages)
+
+
 def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict:
     """Recursively scans a directory for python files to determine
     what packages are in use, as well as the version number
@@ -58,32 +62,32 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
     If the path doesn't exist, an empty dictionary is returned."""
     if not project_dir:
         project_dir = Path.cwd()
-    elif type(project_dir) is str:
+    elif type(project_dir) is str or project_dir.is_file():
         project_dir = Path(project_dir)
     if not project_dir.is_absolute():
         project_dir = project_dir.absolute()
 
-    # Return empty dict if project_dir doesn't exist
+    # Raise error if project_dir doesn't exist
     if not project_dir.exists():
-        return {}
+        raise FileNotFoundError(
+            f"Can't scan directory that doesn't exist: {project_dir}"
+        )
     # You can scan a non python file one at a time if you reeeally want to.
     if project_dir.is_file():
         files = [project_dir]
     else:
-        files = [file for file in crawl(project_dir) if file.suffix == ".py"]
+        files = list(project_dir.rglob("*.py"))
 
     bar = ProgBar(len(files), width_ratio=0.33)
-    # If scanning one file, the progress bar will show 0% complete if bar.counter == 0
-    if len(files) == 1:
-        bar.counter = 1
     used_packages = {}
-    standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f"Scanning {file.name}")
         source = file.read_text(encoding="utf-8")
         packages = get_packages_from_source(source)
+        if not include_builtins:
+            packages = remove_builtins(packages)
         for package in packages:
-            if file.with_stem(package) not in files and package not in standard_lib:
+            if file.with_stem(package) not in files:
                 if (
                     package in used_packages
                     and str(file) not in used_packages[package]["files"]
