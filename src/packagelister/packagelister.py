@@ -76,7 +76,7 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
     # If scanning one file, the progress bar will show 0% complete if bar.counter == 0
     if len(files) == 1:
         bar.counter = 1
-    packages = {}
+    used_packages = {}
     standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f"Scanning {file.name}")
@@ -84,15 +84,18 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
         packages = get_packages_from_source(source)
         for package in packages:
             if file.with_stem(package) not in files and package not in standard_lib:
-                if package in packages and str(file) not in packages[package]["files"]:
-                    packages[package]["files"].append(str(file))
+                if (
+                    package in used_packages
+                    and str(file) not in used_packages[package]["files"]
+                ):
+                    used_packages[package]["files"].append(str(file))
                 else:
                     try:
                         package_version = importlib.metadata.version(package)
                     except Exception as e:
                         package_version = None
-                    packages[package] = {
+                    used_packages[package] = {
                         "files": [str(file)],
                         "version": package_version,
                     }
-    return packages
+    return used_packages
