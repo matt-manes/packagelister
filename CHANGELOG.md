@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.4.0 (2023-05-01)
+## 1.5.0 (2023-05-01)
+
+#### New Features
+
+* add recursive option to get_packages_from_source
+
+
+## v1.4.0 (2023-05-01)
 
 #### New Features
 
@@ -9,6 +16,10 @@
 
 * remove pathcrawler usage
 * refactor scan to use get_packages_from_source
+#### Others
+
+* build v1.4.0
+* update changelog
 
 
 ## v1.3.1 (2023-04-28)
