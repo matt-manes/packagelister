@@ -6,8 +6,13 @@ from pathlib import Path
 from printbuddies import ProgBar
 
 
-def get_packages_from_source(source: str) -> list[str]:
-    """Scan `source` and extract the names of imported packages/modules."""
+def get_packages_from_source(source: str, recursive: bool = False) -> list[str]:
+    """Scan `source` and extract the names of imported packages/modules.
+
+    #### :params:
+
+    `recursive`: Extract modules/packages that are imported by `source`'s imports
+    and those imports' imports and those imports' imports..."""
     import_lines = [
         line.split()[1]
         for line in source.split("\n")
@@ -35,6 +40,17 @@ def get_packages_from_source(source: str) -> list[str]:
         except Exception as e:
             packages.append(module)
     packages = sorted(list(set(packages)))
+    if recursive:
+        i = 0
+        while i < len(packages):
+            module = importlib.import_module(packages[i])
+            try:
+                for package in get_packages_from_source(inspect.getsource(module)):
+                    if package not in packages:
+                        packages.append(package)
+            except Exception as e:
+                ...
+            i += 1
     return packages
 
 
