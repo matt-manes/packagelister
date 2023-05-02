@@ -1,10 +1,25 @@
 # Changelog
 
-## 1.3.1 (2023-04-28)
+## 1.4.0 (2023-05-01)
+
+#### New Features
+
+* add get_packages_from_source()
+#### Refactorings
+
+* remove pathcrawler usage
+* refactor scan to use get_packages_from_source
+
+
+## v1.3.1 (2023-04-28)
 
 #### Fixes
 
 * update printbuddies.ProgBar usage to new version
+#### Others
+
+* build v1.3.1
+* update changelog
 
 
 ## v1.3.0 (2023-04-15)
