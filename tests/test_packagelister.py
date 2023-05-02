@@ -28,3 +28,12 @@ def test_packagelister_cli_main():
 
 def test_packagelister_cli_get_args():
     ...
+
+
+def test__get_packages_from_source():
+    print()
+    text = (
+        Path(__file__).parent.parent / "src" / "packagelister" / "packagelister.py"
+    ).read_text()
+    # print(text)
+    print(packagelister.get_packages_from_source(text))

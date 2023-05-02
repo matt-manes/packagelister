@@ -1,9 +1,43 @@
-import importlib.metadata
+import importlib
+import inspect
 import sys
 from pathlib import Path
 
 from pathcrawler import crawl
 from printbuddies import ProgBar
+
+
+def get_packages_from_source(source: str) -> list[str]:
+    """Scan `source` and extract the names of imported packages/modules."""
+    import_lines = [
+        line.split()[1]
+        for line in source.split("\n")
+        if line.startswith(("from", "import"))
+    ]
+    # print(import_lines)
+    packages = []
+    for line in import_lines:
+        module = None
+        if line.startswith("."):
+            module = line[1:]
+        elif "." in line:
+            module = line[: line.find(".")]
+        if "," in line:
+            module = line[:-1]
+        if not module:
+            module = line
+        imported_module = importlib.import_module(module)
+        try:
+            source_file = Path(inspect.getsourcefile(imported_module))
+            packages.append(
+                source_file.parent.stem
+                if source_file.stem == "__init__"
+                else source_file.stem
+            )
+        except Exception as e:
+            packages.append(module)
+    packages = sorted(list(set(packages)))
+    return packages
 
 
 def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict:
@@ -46,18 +80,9 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
     standard_lib = list(sys.stdlib_module_names) if not include_builtins else []
     for file in files:
         bar.display(suffix=f"Scanning {file.name}")
-        contents = [
-            line.split()[1]
-            for line in file.read_text(encoding="utf-8").splitlines()
-            if line.startswith(("from", "import"))
-        ]
-        for package in contents:
-            if package.startswith("."):
-                package = package[1:]
-            if "." in package:
-                package = package[: package.find(".")]
-            if "," in package:
-                package = package[:-1]
+        source = file.read_text(encoding="utf-8")
+        packages = get_packages_from_source(source)
+        for package in packages:
             if file.with_stem(package) not in files and package not in standard_lib:
                 if package in packages and str(file) not in packages[package]["files"]:
                     packages[package]["files"].append(str(file))
