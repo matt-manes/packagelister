@@ -29,16 +29,20 @@ def get_packages_from_source(source: str, recursive: bool = False) -> list[str]:
             module = line[:-1]
         if not module:
             module = line
-        imported_module = importlib.import_module(module)
         try:
-            source_file = Path(inspect.getsourcefile(imported_module))
-            packages.append(
-                source_file.parent.stem
-                if source_file.stem == "__init__"
-                else source_file.stem
-            )
+            imported_module = importlib.import_module(module)
         except Exception as e:
-            packages.append(module)
+            ...
+        else:
+            try:
+                source_file = Path(inspect.getsourcefile(imported_module))
+                packages.append(
+                    source_file.parent.stem
+                    if source_file.stem == "__init__"
+                    else source_file.stem
+                )
+            except Exception as e:
+                packages.append(module)
     packages = sorted(list(set(packages)))
     if recursive:
         i = 0
