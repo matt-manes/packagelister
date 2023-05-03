@@ -1,10 +1,21 @@
 # Changelog
 
-## 1.5.0 (2023-05-01)
+## 1.5.1 (2023-05-02)
+
+#### Fixes
+
+* fix crash when trying to import something that isn't a module
+
+
+## v1.5.0 (2023-05-01)
 
 #### New Features
 
 * add recursive option to get_packages_from_source
+#### Others
+
+* build v1.5.0
+* update changelog
 
 
 ## v1.4.0 (2023-05-01)
