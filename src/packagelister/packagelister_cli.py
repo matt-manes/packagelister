@@ -66,6 +66,7 @@ def main():
 
     args = get_args()
     packages = scan(args.project_path, args.include_builtins)
+    packages.pop(args.project_path.stem, None)
     if args.generate_requirements:
         req_path = args.project_path / "requirements.txt"
         requirements = "\n".join(
