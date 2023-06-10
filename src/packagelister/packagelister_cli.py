@@ -36,9 +36,8 @@ def main():
             type=str,
             default=None,
             choices=["==", "<", "<=", ">", ">=", "~="],
-            help=""" When generating a requirements.txt file,
-            include the versions of the packages using this
-            relation.""",
+            help=""" When generating a requirements.txt file, include the versions of the packages using this relation.
+            (You may need to put quotes around some of the options.)""",
         )
 
         parser.add_argument(
