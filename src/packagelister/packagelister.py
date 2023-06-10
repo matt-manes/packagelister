@@ -1,4 +1,4 @@
-import importlib
+import importlib.metadata
 import inspect
 import sys
 from pathlib import Path
