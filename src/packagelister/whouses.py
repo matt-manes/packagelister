@@ -11,8 +11,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "package",
         type=str,
-        help=""" Scan the current working directory for
-        project folders that use this package.""",
+        help=""" Scan the current working directory for project folders that use this package.""",
     )
 
     parser.add_argument(
@@ -29,7 +28,7 @@ def get_args() -> argparse.Namespace:
 
 
 def find(top_dir: Pathier, package: str, ignore: list[str]) -> list[str]:
-    """Find what sub-folders of top_dir, excluding those in ignore, use 'package'."""
+    """Find what sub-folders of `top_dir`, excluding those in `ignore`, have files that use `package`."""
     package_users = []
     for project in top_dir.iterdir():
         if project.is_dir() and project.stem not in ignore:
@@ -42,7 +41,7 @@ def main(args: argparse.Namespace = None):
     if not args:
         args = get_args()
     package_users = find(Pathier.cwd(), args.package, args.ignore)
-    print(f"The following packages use {args.package}:")
+    print(f"The following folders have files that use {args.package}:")
     print(*package_users, sep="\n")
 
 
