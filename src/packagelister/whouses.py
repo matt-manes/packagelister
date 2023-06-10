@@ -27,10 +27,10 @@ def get_args() -> argparse.Namespace:
     return args
 
 
-def find(top_dir: Pathier, package: str, ignore: list[str]) -> list[str]:
-    """Find what sub-folders of `top_dir`, excluding those in `ignore`, have files that use `package`."""
+def find(root: Pathier, package: str, ignore: list[str]) -> list[str]:
+    """Find what sub-folders of `root`, excluding those in `ignore`, have files that use `package`."""
     package_users = []
-    for project in top_dir.iterdir():
+    for project in root.iterdir():
         if project.is_dir() and project.stem not in ignore:
             if package in scan(project):
                 package_users.append(project.stem)
