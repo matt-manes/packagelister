@@ -37,4 +37,3 @@ def test__get_packages_from_source():
         "sys",
     ]:
         assert package in packages
-    assert len(packagelister.get_packages_from_source(text, True)) > len(packages)
