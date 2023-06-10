@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.6.0 (2023-06-10)
+
+#### New Features
+
+* replace package names with pip name when they don't match when generating requirements
+#### Fixes
+
+* fix not getting package versions
+#### Performance improvements
+
+* use ast module to extract packages
+#### Refactorings
+
+* add default value to ignore arg in find()
+* replace pathlib with pathier
+* rename top_dir to root
+* remove recursive option from get_packages_from_source
+#### Docs
+
+* update help message
+* improve docstrings
+#### Others
+
+* add missing version prefix
+* remove invalid assertion
+
+
 ## v1.5.1 (2023-05-02)
 
 #### Fixes
