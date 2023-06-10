@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathier import Pathier
 
 import pytest
 
@@ -7,14 +7,14 @@ import packagelister
 
 def test_packagelister_scan():
     print()
-    packages = packagelister.scan(Path(__file__).parent.parent / "src")
+    packages = packagelister.scan(Pathier(__file__).parent.parent / "src")
     assert "printbuddies" in packages
     assert "importlib" not in packages
     assert "sys" not in packages
     assert "pathlib" not in packages
     assert "argparse" not in packages
     assert "packagelister" not in packages
-    packages = packagelister.scan(Path(__file__).parent.parent / "src", True)
+    packages = packagelister.scan(Pathier(__file__).parent.parent / "src", True)
     assert "printbuddies" in packages
     assert "importlib" in packages
     assert "sys" in packages
@@ -26,7 +26,7 @@ def test_packagelister_scan():
 def test__get_packages_from_source():
     print()
     text = (
-        Path(__file__).parent.parent / "src" / "packagelister" / "packagelister.py"
+        Pathier(__file__).parent.parent / "src" / "packagelister" / "packagelister.py"
     ).read_text()
     packages = packagelister.get_packages_from_source(text)
     for package in [
