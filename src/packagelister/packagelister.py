@@ -2,7 +2,7 @@ import importlib
 import inspect
 import sys
 from pathlib import Path
-
+import ast
 from printbuddies import ProgBar
 
 
@@ -13,36 +13,19 @@ def get_packages_from_source(source: str, recursive: bool = False) -> list[str]:
 
     `recursive`: Extract modules/packages that are imported by `source`'s imports
     and those imports' imports and those imports' imports..."""
-    import_lines = [
-        line.split()[1]
-        for line in source.split("\n")
-        if line.startswith(("from", "import"))
-    ]
+    tree = ast.parse(source)
     packages = []
-    for line in import_lines:
-        module = None
-        if line.startswith("."):
-            module = line[1:]
-        elif "." in line:
-            module = line[: line.find(".")]
-        if "," in line:
-            module = line[:-1]
-        if not module:
-            module = line
-        try:
-            imported_module = importlib.import_module(module)
-        except Exception as e:
-            ...
-        else:
-            try:
-                source_file = Path(inspect.getsourcefile(imported_module))
-                packages.append(
-                    source_file.parent.stem
-                    if source_file.stem == "__init__"
-                    else source_file.stem
-                )
-            except Exception as e:
-                packages.append(module)
+    for node in ast.walk(tree):
+        type_ = type(node)
+        package = ""
+        if type_ == ast.Import:
+            package = node.names[0].name
+        elif type_ == ast.ImportFrom:
+            package = node.module
+        if package:
+            if "." in package:
+                package = package[: package.find(".")]
+            packages.append(package)
     packages = sorted(list(set(packages)))
     if recursive:
         i = 0
