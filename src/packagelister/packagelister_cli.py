@@ -1,5 +1,5 @@
 import argparse
-from pathlib import Path
+from pathier import Pathier
 
 from packagelister import scan
 
@@ -51,9 +51,9 @@ def main():
         args = parser.parse_args()
 
         if not args.project_path:
-            args.project_path = Path.cwd()
+            args.project_path = Pathier.cwd()
         else:
-            args.project_path = Path(args.project_path)
+            args.project_path = Pathier(args.project_path)
         if not args.project_path.is_absolute():
             args.project_path = args.project_path.absolute()
 
@@ -81,7 +81,7 @@ def main():
     if args.show_files:
         longest_key = max(len(package) for package in packages)
         packages = [
-            f"{package}{' '*(longest_key-len(package)+4)}{', '.join(str(Path(file).relative_to(args.project_path)) for file in packages[package])}"
+            f"{package}{' '*(longest_key-len(package)+4)}{', '.join(str(Pathier(file).relative_to(args.project_path)) for file in packages[package])}"
             for package in packages
         ]
 

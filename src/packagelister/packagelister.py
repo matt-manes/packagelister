@@ -1,9 +1,9 @@
-import importlib.metadata
-import inspect
-import sys
-from pathlib import Path
 import ast
+import importlib.metadata
+import sys
+
 from printbuddies import ProgBar
+from pathier import Pathier, Pathish
 
 
 def get_packages_from_source(source: str) -> list[str]:
@@ -31,7 +31,7 @@ def remove_builtins(packages: list[str]) -> list[str]:
     return filter(lambda x: x not in builtins, packages)
 
 
-def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict:
+def scan(project_dir: Pathish = None, include_builtins: bool = False) -> dict:
     """Recursively scans a directory for python files to determine
     what packages are in use, as well as the version number if applicable.
 
@@ -44,9 +44,9 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
     If an argument isn't given, the current working directory will be scanned.
     If the path doesn't exist, an empty dictionary is returned."""
     if not project_dir:
-        project_dir = Path.cwd()
+        project_dir = Pathier.cwd()
     elif type(project_dir) is str or project_dir.is_file():
-        project_dir = Path(project_dir)
+        project_dir = Pathier(project_dir)
     if not project_dir.is_absolute():
         project_dir = project_dir.absolute()
 
