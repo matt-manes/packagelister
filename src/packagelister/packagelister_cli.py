@@ -1,7 +1,13 @@
 import argparse
+
 from pathier import Pathier
 
 from packagelister import scan
+
+""" These are packages whose name doesn't match their `pip install` name.
+When `packagelister` is generating a requirements file, these substitutions will be made."""
+
+pipmappings = {"speech_recognition": "SpeechRecognition"}
 
 
 def main():
@@ -62,16 +68,17 @@ def main():
     packages = scan(args.project_path, args.include_builtins)
     if args.generate_requirements:
         req_path = args.project_path / "requirements.txt"
-        req_path.write_text(
-            "\n".join(
-                f"{package}{args.versions}{packages[package]['version']}"
-                if args.versions
-                else f"{package}"
-                if packages[package]["version"]
-                else package
-                for package in sorted(packages)
-            )
+        requirements = "\n".join(
+            f"{package}{args.versions}{packages[package]['version']}"
+            if args.versions
+            else f"{package}"
+            if packages[package]["version"]
+            else package
+            for package in sorted(packages)
         )
+        for mapping in pipmappings:
+            requirements = requirements.replace(mapping, pipmappings[mapping])
+        req_path.write_text(requirements)
     packages = {
         f"{package}=={packages[package]['version']}": packages[package]["files"]
         for package in sorted(packages)
