@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.6.1 (2023-06-10)
+
+#### Fixes
+
+* cli no longer lists the package being scanned in the results
+#### Performance improvements
+
+* remove redundant list sort
+
+
 ## v1.6.0 (2023-06-10)
 
 #### New Features
