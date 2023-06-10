@@ -21,7 +21,6 @@ def get_packages_from_source(source: str) -> list[str]:
             if "." in package:
                 package = package[: package.find(".")]
             packages.append(package)
-    packages = sorted(list(set(packages)))
     return sorted(list(set(packages)))
 
 
