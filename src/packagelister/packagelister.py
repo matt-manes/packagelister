@@ -6,13 +6,8 @@ import ast
 from printbuddies import ProgBar
 
 
-def get_packages_from_source(source: str, recursive: bool = False) -> list[str]:
-    """Scan `source` and extract the names of imported packages/modules.
-
-    #### :params:
-
-    `recursive`: Extract modules/packages that are imported by `source`'s imports
-    and those imports' imports and those imports' imports..."""
+def get_packages_from_source(source: str) -> list[str]:
+    """Scan `source` and extract the names of imported packages/modules."""
     tree = ast.parse(source)
     packages = []
     for node in ast.walk(tree):
@@ -27,18 +22,7 @@ def get_packages_from_source(source: str, recursive: bool = False) -> list[str]:
                 package = package[: package.find(".")]
             packages.append(package)
     packages = sorted(list(set(packages)))
-    if recursive:
-        i = 0
-        while i < len(packages):
-            module = importlib.import_module(packages[i])
-            try:
-                for package in get_packages_from_source(inspect.getsource(module)):
-                    if package not in packages:
-                        packages.append(package)
-            except Exception as e:
-                ...
-            i += 1
-    return packages
+    return sorted(list(set(packages)))
 
 
 def remove_builtins(packages: list[str]) -> list[str]:
@@ -99,7 +83,10 @@ def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict
                 else:
                     try:
                         package_version = importlib.metadata.version(package)
+                    except ModuleNotFoundError:
+                        package_version = None
                     except Exception as e:
+                        print(e)
                         package_version = None
                     used_packages[package] = {
                         "files": [str(file)],
