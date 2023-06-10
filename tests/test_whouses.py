@@ -7,7 +7,8 @@ root = Pathier(__file__).parent
 
 
 def test_find():
-    package = "fakepackage"
-    package_users = whouses.find(root - 2, package, ["pkgs", "envs"])
-    assert "fakeproject" in package_users
-    assert len(package_users) == 1
+    package = "pathier"
+    package_users = whouses.find(root - 1, package)
+    assert root.stem in package_users
+    assert "src" in package_users
+    assert len(package_users) == 2
