@@ -33,19 +33,15 @@ def remove_builtins(packages: list[str]) -> list[str]:
 
 def scan(project_dir: Path | str = None, include_builtins: bool = False) -> dict:
     """Recursively scans a directory for python files to determine
-    what packages are in use, as well as the version number
-    if applicable.
+    what packages are in use, as well as the version number if applicable.
 
-    Returns a dictionary where the keys are package
-    names and the values are the version number of the package if there is one
-    (None if there isn't) and a list of the files that import the package.
+    Returns a dictionary where the keys are package names and
+    the values are dictionaries with the keys `version` for the version number of the package
+    if there is one (None if there isn't) and `files` for a list of the files that import the package.
 
-    :param project_dir: Can be an absolute or relative path
-    to a directory or a single file (.py).
-    If it is relative, it will be assumed to be relative to
-    the current working directory.
-    If an argument isn't given, the current working directory
-    will be scanned.
+    :param project_dir: Can be an absolute or relative path to a directory or a single file (.py).
+    If it is relative, it will be assumed to be relative to the current working directory.
+    If an argument isn't given, the current working directory will be scanned.
     If the path doesn't exist, an empty dictionary is returned."""
     if not project_dir:
         project_dir = Path.cwd()
