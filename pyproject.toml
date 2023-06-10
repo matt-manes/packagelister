@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "packagelister"
 authors = [{name="Matt Manes"}]
 description = "Determine what 3rd-party packages a project imports."
-version = "1.5.1"
+version = "1.6.0"
 requires-python = ">=3.10"
 dependencies = ["printbuddies", "pytest", "pathier"]
 readme = "README.md"

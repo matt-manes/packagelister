@@ -1,6 +1,5 @@
-from pathier import Pathier
-
 import pytest
+from pathier import Pathier
 
 import packagelister
 

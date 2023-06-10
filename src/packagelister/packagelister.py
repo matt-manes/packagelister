@@ -2,8 +2,8 @@ import ast
 import importlib.metadata
 import sys
 
-from printbuddies import ProgBar
 from pathier import Pathier, Pathish
+from printbuddies import ProgBar
 
 
 def get_packages_from_source(source: str) -> list[str]:
