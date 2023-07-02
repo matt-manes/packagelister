@@ -30,10 +30,24 @@ def get_args() -> argparse.Namespace:
 def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     """Find what sub-folders of `root`, excluding those in `ignore`, have files that use `package`."""
     package_users = []
+    scan_fails = {}  # Error message: [projects]
     for project in root.iterdir():
         if project.is_dir() and project.stem not in ignore:
-            if package in scan(project):
-                package_users.append(project.stem)
+            try:
+                if package in scan(project):
+                    package_users.append(project.stem)
+            except Exception as e:
+                err = str(e)
+                if err not in scan_fails:
+                    scan_fails[err] = [project]
+                else:
+                    scan_fails[err].append(project)
+    print()
+    print("The following errors occured during the scan:")
+    for fail in scan_fails:
+        print(f"ERROR: {fail}:")
+        print(*scan_fails[fail], sep="\n")
+        print()
     return package_users
 
 
