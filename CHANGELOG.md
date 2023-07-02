@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.2 (2023-07-02)
+
+#### Performance improvements
+
+* add exception hadling and reporting to `whouses` script
+
 ## v1.6.1 (2023-06-10)
 
 #### Fixes
