@@ -74,6 +74,12 @@ def main(args: argparse.Namespace | None = None):
     if args.files:
         print("Files importing each package:")
         files_by_package = project.get_files_by_package()
+        if not args.builtins:
+            files_by_package = {
+                k: v
+                for k, v in files_by_package.items()
+                if k in project.packages.third_party.names
+            }
         for package, files in files_by_package.items():
             print(f"{package}:")
             print(*[f"  {file}" for file in files], sep="\n")
