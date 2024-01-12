@@ -1,5 +1,33 @@
 # Changelog
 
+## v2.0.0 (2024-01-12)
+
+#### New Features
+* BREAKING
+* add `Package.from_distribution_name()` method
+* add option to suppress scan progress printout
+#### Fixes
+
+* fix scan_dir output formatting
+* fix showing builtins when using --files without --builtins
+#### Performance improvements
+
+* condense terminal printout and add a progress bar
+* rewrite core so that it's better organized, faster, and more accurate
+#### Refactorings
+
+* change `Package.format_requirement()` to `Package.get_formatted_requirement()`
+* change progbar display width to 0.3
+* edit printout to include package versions event when including builtin packages
+* rename `Project.unique_packages` to `Project.packages`
+#### Docs
+
+* edit typo in readme
+* change type annotation for `Package.distribution_name` and `Package.version`
+* update readme
+* add function and class docstrings
+
+
 ## v1.6.2 (2023-07-02)
 
 #### Performance improvements
