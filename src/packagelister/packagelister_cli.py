@@ -61,9 +61,8 @@ def main(args: argparse.Namespace | None = None):
     print(f"Packages imported by {Pathier.cwd().stem}:")
     print(
         *(
-            project.get_formatted_requirements(args.versions)
-            if not args.builtins
-            else project.packages.names
+            project.get_formatted_requirements(" v")
+            + ([] if not args.builtins else project.packages.builtin.names)
         ),
         sep="\n",
     )
