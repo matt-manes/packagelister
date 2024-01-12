@@ -31,13 +31,82 @@
         <h2>API Documentation</h2>
             <ul class="memberlist">
             <li>
-                    <a class="function" href="#get_packages_from_source">get_packages_from_source</a>
+                    <a class="function" href="#is_builtin">is_builtin</a>
             </li>
             <li>
-                    <a class="function" href="#remove_builtins">remove_builtins</a>
+                    <a class="class" href="#Package">Package</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#Package.__init__">Package</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Package.get_formatted_requirement">get_formatted_requirement</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Package.from_name">from_name</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Package.from_distribution_name">from_distribution_name</a>
+                        </li>
+                </ul>
+
             </li>
             <li>
-                    <a class="function" href="#scan">scan</a>
+                    <a class="class" href="#PackageList">PackageList</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="variable" href="#PackageList.names">names</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PackageList.distribution_names">distribution_names</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PackageList.third_party">third_party</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#PackageList.builtin">builtin</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#File">File</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#File.__init__">File</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#Project">Project</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#Project.__init__">Project</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Project.packages">packages</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#Project.requirements">requirements</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Project.get_formatted_requirements">get_formatted_requirements</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Project.get_files_by_package">get_files_by_package</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="function" href="#get_package_names_from_source">get_package_names_from_source</a>
+            </li>
+            <li>
+                    <a class="function" href="#scan_file">scan_file</a>
+            </li>
+            <li>
+                    <a class="function" href="#scan_dir">scan_dir</a>
             </li>
     </ul>
 
@@ -60,127 +129,814 @@
 
                         <label class="view-source-button" for="mod-packagelister-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">import</span> <span class="nn">ast</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="kn">import</span> <span class="nn">importlib.metadata</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">import</span> <span class="nn">sys</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span> <span class="nn">pathier</span> <span class="kn">import</span> <span class="n">Pathier</span><span class="p">,</span> <span class="n">Pathish</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">printbuddies</span> <span class="kn">import</span> <span class="n">ProgBar</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="k">def</span> <span class="nf">get_packages_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="sd">&quot;&quot;&quot;Scan `source` and extract the names of imported packages/modules.&quot;&quot;&quot;</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>        <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>        <span class="n">package</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>        <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">Import</span><span class="p">:</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>        <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">:</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">module</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>        <span class="k">if</span> <span class="n">package</span><span class="p">:</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>            <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">package</span><span class="p">:</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>                <span class="n">package</span> <span class="o">=</span> <span class="n">package</span><span class="p">[:</span> <span class="n">package</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">packages</span><span class="p">)))</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="k">def</span> <span class="nf">remove_builtins</span><span class="p">(</span><span class="n">packages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="sd">&quot;&quot;&quot;Remove built in packages/modules from a list of package names.&quot;&quot;&quot;</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="n">builtins</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdlib_module_names</span><span class="p">)</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">builtins</span><span class="p">,</span> <span class="n">packages</span><span class="p">)</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="n">project_dir</span><span class="p">:</span> <span class="n">Pathish</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_builtins</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="sd">&quot;&quot;&quot;Recursively scans a directory for python files to determine</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">    what packages are in use, as well as the version number if applicable.</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">    Returns a dictionary where the keys are package names and</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">    the values are dictionaries with the keys `version` for the version number of the package</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">    if there is one (None if there isn&#39;t) and `files` for a list of the files that import the package.</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    :param project_dir: Can be an absolute or relative path to a directory or a single file (.py).</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">    If it is relative, it will be assumed to be relative to the current working directory.</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">    If an argument isn&#39;t given, the current working directory will be scanned.</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    If the path doesn&#39;t exist, an empty dictionary is returned.&quot;&quot;&quot;</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="p">:</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">Pathier</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">project_dir</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">project_dir</span><span class="p">)</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>    <span class="c1"># Raise error if project_dir doesn&#39;t exist</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>            <span class="sa">f</span><span class="s2">&quot;Can&#39;t scan directory that doesn&#39;t exist: </span><span class="si">{</span><span class="n">project_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="p">)</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>    <span class="c1"># You can scan a non python file one at a time if you reeeally want to.</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>    <span class="k">if</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">project_dir</span><span class="p">]</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project_dir</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">))</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>    <span class="n">bar</span> <span class="o">=</span> <span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">width_ratio</span><span class="o">=</span><span class="mf">0.33</span><span class="p">)</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>    <span class="n">used_packages</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>        <span class="n">bar</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Scanning </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>        <span class="n">source</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>        <span class="n">packages</span> <span class="o">=</span> <span class="n">get_packages_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_builtins</span><span class="p">:</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>            <span class="n">packages</span> <span class="o">=</span> <span class="n">remove_builtins</span><span class="p">(</span><span class="n">packages</span><span class="p">)</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">with_stem</span><span class="p">(</span><span class="n">package</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>                <span class="k">if</span> <span class="p">(</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>                    <span class="n">package</span> <span class="ow">in</span> <span class="n">used_packages</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>                    <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">][</span><span class="s2">&quot;files&quot;</span><span class="p">]</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>                <span class="p">):</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>                    <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">][</span><span class="s2">&quot;files&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>                <span class="k">else</span><span class="p">:</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>                    <span class="k">try</span><span class="p">:</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>                    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>                        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a>                    <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>                        <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">)],</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>                        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">package_version</span><span class="p">,</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>                    <span class="p">}</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>    <span class="k">return</span> <span class="n">used_packages</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="kn">import</span> <span class="nn">ast</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="kn">import</span> <span class="nn">importlib.metadata</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="kn">import</span> <span class="nn">sys</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">from</span> <span class="nn">pathier</span> <span class="kn">import</span> <span class="n">Pathier</span><span class="p">,</span> <span class="n">Pathish</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="kn">from</span> <span class="nn">printbuddies</span> <span class="kn">import</span> <span class="n">ProgBar</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="c1"># figured it&#39;s more efficient to have this on hand than calling the function everytime I need the mapping</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="n">packages_distributions</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">packages_distributions</span><span class="p">()</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="c1"># A list of distributions for this Python install</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="n">distributions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>    <span class="p">[</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a>        <span class="n">name</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>        <span class="k">for</span> <span class="n">distributions</span> <span class="ow">in</span> <span class="n">packages_distributions</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">distributions</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a>    <span class="p">]</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="p">)</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="k">def</span> <span class="nf">is_builtin</span><span class="p">(</span><span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>    <span class="sd">&quot;&quot;&quot;Returns whether `package_name` is a standard library module or not.&quot;&quot;&quot;</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a>    <span class="k">return</span> <span class="n">package_name</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdlib_module_names</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="nd">@dataclass</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="k">class</span> <span class="nc">Package</span><span class="p">:</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing an imported package.</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    #### Fields:</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">    * `name: str`</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">    * `distribution_name: str` - the name used to `pip install`, sometimes this differs from `name`</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">    * `version: str`</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">    * `builtin: bool` - whether this is a standard library package or not&quot;&quot;&quot;</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>    <span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>    <span class="n">builtin</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>        <span class="sd">&quot;&quot;&quot;Returns a string of the form `{self.distribution_name}{version_specifier}{self.version}`.</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">        e.g for this package: `&quot;packagelister&gt;=2.0.0&quot;`&quot;&quot;&quot;</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution_name</span><span class="si">}{</span><span class="n">version_specifier</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>    <span class="nd">@classmethod</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>    <span class="k">def</span> <span class="nf">from_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the package name.</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">        Will attempt to determine the other class fields.&quot;&quot;&quot;</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>        <span class="n">distributions</span> <span class="o">=</span> <span class="n">packages_distributions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package_name</span><span class="p">)</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>        <span class="k">if</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="n">distributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">package_name</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">is_builtin</span><span class="p">(</span><span class="n">package_name</span><span class="p">))</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>    <span class="nd">@classmethod</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>    <span class="k">def</span> <span class="nf">from_distribution_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the distribution name.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="sd">        Returned instance will have an empty `name` field.</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="sd">        Raises `ValueError` if `distribution_name` isn&#39;t found in `importlib.metadata.packages_distributions()`.</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="k">if</span> <span class="n">distribution_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">distribution_name</span><span class="si">}</span><span class="s2">` not found in Python&#39;s installed distributions.&quot;</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>            <span class="p">)</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="k">class</span> <span class="nc">PackageList</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Package</span><span class="p">]):</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>    <span class="sd">&quot;&quot;&quot;A subclass of `list` to add convenience methods when working with a list of `packagelister.Package` objects.&quot;&quot;&quot;</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>    <span class="nd">@property</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of `Package.name` strings.&quot;&quot;&quot;</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">package</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="nd">@property</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="k">def</span> <span class="nf">distribution_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of `Package.distribution_name` strings for third party packages in this list.&quot;&quot;&quot;</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">package</span><span class="o">.</span><span class="n">distribution_name</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">third_party</span><span class="p">]</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>    <span class="nd">@property</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="k">def</span> <span class="nf">third_party</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `PackageList` instance for the third party packages in this list.&quot;&quot;&quot;</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>            <span class="p">[</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>                <span class="n">package</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>                <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>                <span class="k">if</span> <span class="ow">not</span> <span class="n">package</span><span class="o">.</span><span class="n">builtin</span> <span class="ow">and</span> <span class="n">package</span><span class="o">.</span><span class="n">distribution_name</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>            <span class="p">]</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="p">)</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>    <span class="nd">@property</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>    <span class="k">def</span> <span class="nf">builtin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `PackageList` instance for the standard library packages in this list.&quot;&quot;&quot;</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">([</span><span class="n">package</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">package</span><span class="o">.</span><span class="n">builtin</span><span class="p">])</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="nd">@dataclass</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="k">class</span> <span class="nc">File</span><span class="p">:</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing a scanned file and its list of imported packages.</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="sd">    #### Fields:</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">    * `path: Pathier` - Pathier object representing the path to this file</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">    * `packages: packagelister.PackageList` - List of Package objects imported by this file</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="n">path</span><span class="p">:</span> <span class="n">Pathier</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="n">packages</span><span class="p">:</span> <span class="n">PackageList</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="nd">@dataclass</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="k">class</span> <span class="nc">Project</span><span class="p">:</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing a directory that&#39;s had its files scanned for imports.</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">    #### Fields:</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">    * `files: list[packagelister.File]`&quot;&quot;&quot;</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>    <span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">File</span><span class="p">]</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>    <span class="nd">@property</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>    <span class="k">def</span> <span class="nf">packages</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackageList</span><span class="p">:</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `packagelister.PackageList` object for this instance with no duplicates.&quot;&quot;&quot;</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>        <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>            <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">packages</span><span class="p">:</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>                <span class="k">if</span> <span class="n">package</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>                    <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>        <span class="k">return</span> <span class="n">PackageList</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>    <span class="nd">@property</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>    <span class="k">def</span> <span class="nf">requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackageList</span><span class="p">:</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `packagelister.PackageList` object of third party packages used by this project.&quot;&quot;&quot;</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">third_party</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirements</span><span class="p">(</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of formatted requirements (third party packages) using `version_specifier` (`==`,`&gt;=`, `&lt;=`, etc.).</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a><span class="sd">        If no `version_specifier` is given, the returned list will just be package names.</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>        <span class="k">return</span> <span class="p">[</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>            <span class="n">requirement</span><span class="o">.</span><span class="n">get_formatted_requirement</span><span class="p">(</span><span class="n">version_specifier</span><span class="p">)</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>            <span class="k">if</span> <span class="n">version_specifier</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>            <span class="k">else</span> <span class="n">requirement</span><span class="o">.</span><span class="n">distribution_name</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">name</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>            <span class="k">for</span> <span class="n">requirement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirements</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>        <span class="p">]</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>    <span class="k">def</span> <span class="nf">get_files_by_package</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pathier</span><span class="p">]]:</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>        <span class="sd">&quot;&quot;&quot;Returns a dictionary where the keys are package names and the values are lists of files that import the package.&quot;&quot;&quot;</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>        <span class="n">files_by_package</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages</span><span class="p">:</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>                <span class="n">name</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">name</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>                    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">files_by_package</span><span class="p">:</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">]</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>                    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>        <span class="k">return</span> <span class="n">files_by_package</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a><span class="k">def</span> <span class="nf">get_package_names_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>    <span class="sd">&quot;&quot;&quot;Scan `source` and extract the names of imported packages/modules.&quot;&quot;&quot;</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>    <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>        <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>        <span class="n">package</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>        <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">Import</span><span class="p">:</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># type: ignore</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>        <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">:</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">module</span>  <span class="c1"># type: ignore</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>        <span class="k">if</span> <span class="n">package</span><span class="p">:</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>            <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">package</span><span class="p">:</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>                <span class="n">package</span> <span class="o">=</span> <span class="n">package</span><span class="p">[:</span> <span class="n">package</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">packages</span><span class="p">)))</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a><span class="k">def</span> <span class="nf">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">Pathish</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>    <span class="sd">&quot;&quot;&quot;Scan `file` for imports and return a `packagelister.File` instance.&quot;&quot;&quot;</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a>    <span class="n">file</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="o">==</span> <span class="n">Pathier</span> <span class="k">else</span> <span class="n">file</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="n">source</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="n">get_package_names_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>    <span class="n">used_packages</span> <span class="o">=</span> <span class="n">PackageList</span><span class="p">(</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>        <span class="p">[</span>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>            <span class="n">Package</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>            <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">packages</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>            <span class="k">if</span> <span class="n">package</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>            <span class="ow">not</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">parts</span>  <span class="c1"># don&#39;t want to pick up modules in the scanned directory</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>        <span class="p">]</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>    <span class="p">)</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>    <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">used_packages</span><span class="p">)</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a><span class="k">def</span> <span class="nf">scan_dir</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Pathish</span><span class="p">,</span> <span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Project</span><span class="p">:</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>    <span class="sd">&quot;&quot;&quot;Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance.</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a><span class="sd">    Set `quiet` to `False` to prevent printing.&quot;&quot;&quot;</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>    <span class="n">path</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">Pathier</span> <span class="k">else</span> <span class="n">path</span>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>    <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">))</span>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>    <span class="k">if</span> <span class="n">quiet</span><span class="p">:</span>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a>        <span class="n">project</span> <span class="o">=</span> <span class="n">Project</span><span class="p">([</span><span class="n">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">])</span>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>        <span class="n">num_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Scanning </span><span class="si">{</span><span class="n">num_files</span><span class="si">}</span><span class="s2"> files in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> for imports...&quot;</span><span class="p">)</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>        <span class="k">with</span> <span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">width_ratio</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span> <span class="k">as</span> <span class="n">bar</span><span class="p">:</span>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>            <span class="n">project</span> <span class="o">=</span> <span class="n">Project</span><span class="p">(</span>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>                <span class="p">[</span><span class="n">bar</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">return_object</span><span class="o">=</span><span class="n">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">))</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>            <span class="p">)</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>    <span class="k">return</span> <span class="n">project</span>
 </span></pre></div>
 
 
             </section>
-                <section id="get_packages_from_source">
-                            <input id="get_packages_from_source-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="is_builtin">
+                            <input id="is_builtin-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">get_packages_from_source</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">source</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+        <span class="name">is_builtin</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
 
-                <label class="view-source-button" for="get_packages_from_source-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="is_builtin-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#get_packages_from_source"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="get_packages_from_source-10"><a href="#get_packages_from_source-10"><span class="linenos">10</span></a><span class="k">def</span> <span class="nf">get_packages_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="get_packages_from_source-11"><a href="#get_packages_from_source-11"><span class="linenos">11</span></a>    <span class="sd">&quot;&quot;&quot;Scan `source` and extract the names of imported packages/modules.&quot;&quot;&quot;</span>
-</span><span id="get_packages_from_source-12"><a href="#get_packages_from_source-12"><span class="linenos">12</span></a>    <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span id="get_packages_from_source-13"><a href="#get_packages_from_source-13"><span class="linenos">13</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="get_packages_from_source-14"><a href="#get_packages_from_source-14"><span class="linenos">14</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-</span><span id="get_packages_from_source-15"><a href="#get_packages_from_source-15"><span class="linenos">15</span></a>        <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-</span><span id="get_packages_from_source-16"><a href="#get_packages_from_source-16"><span class="linenos">16</span></a>        <span class="n">package</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span id="get_packages_from_source-17"><a href="#get_packages_from_source-17"><span class="linenos">17</span></a>        <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">Import</span><span class="p">:</span>
-</span><span id="get_packages_from_source-18"><a href="#get_packages_from_source-18"><span class="linenos">18</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
-</span><span id="get_packages_from_source-19"><a href="#get_packages_from_source-19"><span class="linenos">19</span></a>        <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">:</span>
-</span><span id="get_packages_from_source-20"><a href="#get_packages_from_source-20"><span class="linenos">20</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">module</span>
-</span><span id="get_packages_from_source-21"><a href="#get_packages_from_source-21"><span class="linenos">21</span></a>        <span class="k">if</span> <span class="n">package</span><span class="p">:</span>
-</span><span id="get_packages_from_source-22"><a href="#get_packages_from_source-22"><span class="linenos">22</span></a>            <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">package</span><span class="p">:</span>
-</span><span id="get_packages_from_source-23"><a href="#get_packages_from_source-23"><span class="linenos">23</span></a>                <span class="n">package</span> <span class="o">=</span> <span class="n">package</span><span class="p">[:</span> <span class="n">package</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
-</span><span id="get_packages_from_source-24"><a href="#get_packages_from_source-24"><span class="linenos">24</span></a>            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-</span><span id="get_packages_from_source-25"><a href="#get_packages_from_source-25"><span class="linenos">25</span></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">packages</span><span class="p">)))</span>
+    <a class="headerlink" href="#is_builtin"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="is_builtin-23"><a href="#is_builtin-23"><span class="linenos">23</span></a><span class="k">def</span> <span class="nf">is_builtin</span><span class="p">(</span><span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="is_builtin-24"><a href="#is_builtin-24"><span class="linenos">24</span></a>    <span class="sd">&quot;&quot;&quot;Returns whether `package_name` is a standard library module or not.&quot;&quot;&quot;</span>
+</span><span id="is_builtin-25"><a href="#is_builtin-25"><span class="linenos">25</span></a>    <span class="k">return</span> <span class="n">package_name</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdlib_module_names</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns whether <code>package_name</code> is a standard library module or not.</p>
+</div>
+
+
+                </section>
+                <section id="Package">
+                            <input id="Package-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">Package</span>:
+
+                <label class="view-source-button" for="Package-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Package"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Package-28"><a href="#Package-28"><span class="linenos">28</span></a><span class="nd">@dataclass</span>
+</span><span id="Package-29"><a href="#Package-29"><span class="linenos">29</span></a><span class="k">class</span> <span class="nc">Package</span><span class="p">:</span>
+</span><span id="Package-30"><a href="#Package-30"><span class="linenos">30</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing an imported package.</span>
+</span><span id="Package-31"><a href="#Package-31"><span class="linenos">31</span></a>
+</span><span id="Package-32"><a href="#Package-32"><span class="linenos">32</span></a><span class="sd">    #### Fields:</span>
+</span><span id="Package-33"><a href="#Package-33"><span class="linenos">33</span></a><span class="sd">    * `name: str`</span>
+</span><span id="Package-34"><a href="#Package-34"><span class="linenos">34</span></a><span class="sd">    * `distribution_name: str` - the name used to `pip install`, sometimes this differs from `name`</span>
+</span><span id="Package-35"><a href="#Package-35"><span class="linenos">35</span></a><span class="sd">    * `version: str`</span>
+</span><span id="Package-36"><a href="#Package-36"><span class="linenos">36</span></a><span class="sd">    * `builtin: bool` - whether this is a standard library package or not&quot;&quot;&quot;</span>
+</span><span id="Package-37"><a href="#Package-37"><span class="linenos">37</span></a>
+</span><span id="Package-38"><a href="#Package-38"><span class="linenos">38</span></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="Package-39"><a href="#Package-39"><span class="linenos">39</span></a>    <span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="Package-40"><a href="#Package-40"><span class="linenos">40</span></a>    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="Package-41"><a href="#Package-41"><span class="linenos">41</span></a>    <span class="n">builtin</span><span class="p">:</span> <span class="nb">bool</span>
+</span><span id="Package-42"><a href="#Package-42"><span class="linenos">42</span></a>
+</span><span id="Package-43"><a href="#Package-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Package-44"><a href="#Package-44"><span class="linenos">44</span></a>        <span class="sd">&quot;&quot;&quot;Returns a string of the form `{self.distribution_name}{version_specifier}{self.version}`.</span>
+</span><span id="Package-45"><a href="#Package-45"><span class="linenos">45</span></a><span class="sd">        e.g for this package: `&quot;packagelister&gt;=2.0.0&quot;`&quot;&quot;&quot;</span>
+</span><span id="Package-46"><a href="#Package-46"><span class="linenos">46</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution_name</span><span class="si">}{</span><span class="n">version_specifier</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="Package-47"><a href="#Package-47"><span class="linenos">47</span></a>
+</span><span id="Package-48"><a href="#Package-48"><span class="linenos">48</span></a>    <span class="nd">@classmethod</span>
+</span><span id="Package-49"><a href="#Package-49"><span class="linenos">49</span></a>    <span class="k">def</span> <span class="nf">from_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="Package-50"><a href="#Package-50"><span class="linenos">50</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the package name.</span>
+</span><span id="Package-51"><a href="#Package-51"><span class="linenos">51</span></a>
+</span><span id="Package-52"><a href="#Package-52"><span class="linenos">52</span></a><span class="sd">        Will attempt to determine the other class fields.&quot;&quot;&quot;</span>
+</span><span id="Package-53"><a href="#Package-53"><span class="linenos">53</span></a>        <span class="n">distributions</span> <span class="o">=</span> <span class="n">packages_distributions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package_name</span><span class="p">)</span>
+</span><span id="Package-54"><a href="#Package-54"><span class="linenos">54</span></a>        <span class="k">if</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="Package-55"><a href="#Package-55"><span class="linenos">55</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="n">distributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="Package-56"><a href="#Package-56"><span class="linenos">56</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="Package-57"><a href="#Package-57"><span class="linenos">57</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="Package-58"><a href="#Package-58"><span class="linenos">58</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="Package-59"><a href="#Package-59"><span class="linenos">59</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="Package-60"><a href="#Package-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">package_name</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">is_builtin</span><span class="p">(</span><span class="n">package_name</span><span class="p">))</span>
+</span><span id="Package-61"><a href="#Package-61"><span class="linenos">61</span></a>
+</span><span id="Package-62"><a href="#Package-62"><span class="linenos">62</span></a>    <span class="nd">@classmethod</span>
+</span><span id="Package-63"><a href="#Package-63"><span class="linenos">63</span></a>    <span class="k">def</span> <span class="nf">from_distribution_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="Package-64"><a href="#Package-64"><span class="linenos">64</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the distribution name.</span>
+</span><span id="Package-65"><a href="#Package-65"><span class="linenos">65</span></a>
+</span><span id="Package-66"><a href="#Package-66"><span class="linenos">66</span></a><span class="sd">        Returned instance will have an empty `name` field.</span>
+</span><span id="Package-67"><a href="#Package-67"><span class="linenos">67</span></a>
+</span><span id="Package-68"><a href="#Package-68"><span class="linenos">68</span></a><span class="sd">        Raises `ValueError` if `distribution_name` isn&#39;t found in `importlib.metadata.packages_distributions()`.</span>
+</span><span id="Package-69"><a href="#Package-69"><span class="linenos">69</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Package-70"><a href="#Package-70"><span class="linenos">70</span></a>        <span class="k">if</span> <span class="n">distribution_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="Package-71"><a href="#Package-71"><span class="linenos">71</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="Package-72"><a href="#Package-72"><span class="linenos">72</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">distribution_name</span><span class="si">}</span><span class="s2">` not found in Python&#39;s installed distributions.&quot;</span>
+</span><span id="Package-73"><a href="#Package-73"><span class="linenos">73</span></a>            <span class="p">)</span>
+</span><span id="Package-74"><a href="#Package-74"><span class="linenos">74</span></a>        <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="Package-75"><a href="#Package-75"><span class="linenos">75</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Dataclass representing an imported package.</p>
+
+<h4 id="fields">Fields:</h4>
+
+<ul>
+<li><code>name: str</code></li>
+<li><code>distribution_name: str</code> - the name used to <code>pip install</code>, sometimes this differs from <code>name</code></li>
+<li><code>version: str</code></li>
+<li><code>builtin: bool</code> - whether this is a standard library package or not</li>
+</ul>
+</div>
+
+
+                            <div id="Package.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">Package</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">version</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">builtin</span><span class="p">:</span> <span class="nb">bool</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Package.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Package.get_formatted_requirement" class="classattr">
+                                        <input id="Package.get_formatted_requirement-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_formatted_requirement</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="Package.get_formatted_requirement-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Package.get_formatted_requirement"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Package.get_formatted_requirement-43"><a href="#Package.get_formatted_requirement-43"><span class="linenos">43</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Package.get_formatted_requirement-44"><a href="#Package.get_formatted_requirement-44"><span class="linenos">44</span></a>        <span class="sd">&quot;&quot;&quot;Returns a string of the form `{self.distribution_name}{version_specifier}{self.version}`.</span>
+</span><span id="Package.get_formatted_requirement-45"><a href="#Package.get_formatted_requirement-45"><span class="linenos">45</span></a><span class="sd">        e.g for this package: `&quot;packagelister&gt;=2.0.0&quot;`&quot;&quot;&quot;</span>
+</span><span id="Package.get_formatted_requirement-46"><a href="#Package.get_formatted_requirement-46"><span class="linenos">46</span></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution_name</span><span class="si">}{</span><span class="n">version_specifier</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns a string of the form <code>{self.distribution_name}{version_specifier}{self.version}</code>.
+e.g for this package: <code>"packagelister&gt;=2.0.0"</code></p>
+</div>
+
+
+                            </div>
+                            <div id="Package.from_name" class="classattr">
+                                        <input id="Package.from_name-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator">@classmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">from_name</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">cls</span>, </span><span class="param"><span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Self</span>:</span></span>
+
+                <label class="view-source-button" for="Package.from_name-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Package.from_name"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Package.from_name-48"><a href="#Package.from_name-48"><span class="linenos">48</span></a>    <span class="nd">@classmethod</span>
+</span><span id="Package.from_name-49"><a href="#Package.from_name-49"><span class="linenos">49</span></a>    <span class="k">def</span> <span class="nf">from_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">package_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="Package.from_name-50"><a href="#Package.from_name-50"><span class="linenos">50</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the package name.</span>
+</span><span id="Package.from_name-51"><a href="#Package.from_name-51"><span class="linenos">51</span></a>
+</span><span id="Package.from_name-52"><a href="#Package.from_name-52"><span class="linenos">52</span></a><span class="sd">        Will attempt to determine the other class fields.&quot;&quot;&quot;</span>
+</span><span id="Package.from_name-53"><a href="#Package.from_name-53"><span class="linenos">53</span></a>        <span class="n">distributions</span> <span class="o">=</span> <span class="n">packages_distributions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package_name</span><span class="p">)</span>
+</span><span id="Package.from_name-54"><a href="#Package.from_name-54"><span class="linenos">54</span></a>        <span class="k">if</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="Package.from_name-55"><a href="#Package.from_name-55"><span class="linenos">55</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="n">distributions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="Package.from_name-56"><a href="#Package.from_name-56"><span class="linenos">56</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="Package.from_name-57"><a href="#Package.from_name-57"><span class="linenos">57</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="Package.from_name-58"><a href="#Package.from_name-58"><span class="linenos">58</span></a>            <span class="n">distribution_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="Package.from_name-59"><a href="#Package.from_name-59"><span class="linenos">59</span></a>            <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="Package.from_name-60"><a href="#Package.from_name-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">package_name</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">is_builtin</span><span class="p">(</span><span class="n">package_name</span><span class="p">))</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns a <code><a href="#Package">Package</a></code> instance from the package name.</p>
+
+<p>Will attempt to determine the other class fields.</p>
+</div>
+
+
+                            </div>
+                            <div id="Package.from_distribution_name" class="classattr">
+                                        <input id="Package.from_distribution_name-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator">@classmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">from_distribution_name</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">cls</span>, </span><span class="param"><span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Self</span>:</span></span>
+
+                <label class="view-source-button" for="Package.from_distribution_name-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Package.from_distribution_name"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Package.from_distribution_name-62"><a href="#Package.from_distribution_name-62"><span class="linenos">62</span></a>    <span class="nd">@classmethod</span>
+</span><span id="Package.from_distribution_name-63"><a href="#Package.from_distribution_name-63"><span class="linenos">63</span></a>    <span class="k">def</span> <span class="nf">from_distribution_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="Package.from_distribution_name-64"><a href="#Package.from_distribution_name-64"><span class="linenos">64</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `Package` instance from the distribution name.</span>
+</span><span id="Package.from_distribution_name-65"><a href="#Package.from_distribution_name-65"><span class="linenos">65</span></a>
+</span><span id="Package.from_distribution_name-66"><a href="#Package.from_distribution_name-66"><span class="linenos">66</span></a><span class="sd">        Returned instance will have an empty `name` field.</span>
+</span><span id="Package.from_distribution_name-67"><a href="#Package.from_distribution_name-67"><span class="linenos">67</span></a>
+</span><span id="Package.from_distribution_name-68"><a href="#Package.from_distribution_name-68"><span class="linenos">68</span></a><span class="sd">        Raises `ValueError` if `distribution_name` isn&#39;t found in `importlib.metadata.packages_distributions()`.</span>
+</span><span id="Package.from_distribution_name-69"><a href="#Package.from_distribution_name-69"><span class="linenos">69</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Package.from_distribution_name-70"><a href="#Package.from_distribution_name-70"><span class="linenos">70</span></a>        <span class="k">if</span> <span class="n">distribution_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">distributions</span><span class="p">:</span>
+</span><span id="Package.from_distribution_name-71"><a href="#Package.from_distribution_name-71"><span class="linenos">71</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="Package.from_distribution_name-72"><a href="#Package.from_distribution_name-72"><span class="linenos">72</span></a>                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">distribution_name</span><span class="si">}</span><span class="s2">` not found in Python&#39;s installed distributions.&quot;</span>
+</span><span id="Package.from_distribution_name-73"><a href="#Package.from_distribution_name-73"><span class="linenos">73</span></a>            <span class="p">)</span>
+</span><span id="Package.from_distribution_name-74"><a href="#Package.from_distribution_name-74"><span class="linenos">74</span></a>        <span class="n">version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">distribution_name</span><span class="p">)</span>
+</span><span id="Package.from_distribution_name-75"><a href="#Package.from_distribution_name-75"><span class="linenos">75</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">distribution_name</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns a <code><a href="#Package">Package</a></code> instance from the distribution name.</p>
+
+<p>Returned instance will have an empty <code>name</code> field.</p>
+
+<p>Raises <code>ValueError</code> if <code>distribution_name</code> isn't found in <code>importlib.metadata.packages_distributions()</code>.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="PackageList">
+                            <input id="PackageList-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">PackageList</span><wbr>(<span class="base">list[packagelister.packagelister.Package]</span>):
+
+                <label class="view-source-button" for="PackageList-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#PackageList"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PackageList-78"><a href="#PackageList-78"><span class="linenos"> 78</span></a><span class="k">class</span> <span class="nc">PackageList</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">Package</span><span class="p">]):</span>
+</span><span id="PackageList-79"><a href="#PackageList-79"><span class="linenos"> 79</span></a>    <span class="sd">&quot;&quot;&quot;A subclass of `list` to add convenience methods when working with a list of `packagelister.Package` objects.&quot;&quot;&quot;</span>
+</span><span id="PackageList-80"><a href="#PackageList-80"><span class="linenos"> 80</span></a>
+</span><span id="PackageList-81"><a href="#PackageList-81"><span class="linenos"> 81</span></a>    <span class="nd">@property</span>
+</span><span id="PackageList-82"><a href="#PackageList-82"><span class="linenos"> 82</span></a>    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="PackageList-83"><a href="#PackageList-83"><span class="linenos"> 83</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of `Package.name` strings.&quot;&quot;&quot;</span>
+</span><span id="PackageList-84"><a href="#PackageList-84"><span class="linenos"> 84</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">package</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span>
+</span><span id="PackageList-85"><a href="#PackageList-85"><span class="linenos"> 85</span></a>
+</span><span id="PackageList-86"><a href="#PackageList-86"><span class="linenos"> 86</span></a>    <span class="nd">@property</span>
+</span><span id="PackageList-87"><a href="#PackageList-87"><span class="linenos"> 87</span></a>    <span class="k">def</span> <span class="nf">distribution_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="PackageList-88"><a href="#PackageList-88"><span class="linenos"> 88</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of `Package.distribution_name` strings for third party packages in this list.&quot;&quot;&quot;</span>
+</span><span id="PackageList-89"><a href="#PackageList-89"><span class="linenos"> 89</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">package</span><span class="o">.</span><span class="n">distribution_name</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">third_party</span><span class="p">]</span>
+</span><span id="PackageList-90"><a href="#PackageList-90"><span class="linenos"> 90</span></a>
+</span><span id="PackageList-91"><a href="#PackageList-91"><span class="linenos"> 91</span></a>    <span class="nd">@property</span>
+</span><span id="PackageList-92"><a href="#PackageList-92"><span class="linenos"> 92</span></a>    <span class="k">def</span> <span class="nf">third_party</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="PackageList-93"><a href="#PackageList-93"><span class="linenos"> 93</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `PackageList` instance for the third party packages in this list.&quot;&quot;&quot;</span>
+</span><span id="PackageList-94"><a href="#PackageList-94"><span class="linenos"> 94</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+</span><span id="PackageList-95"><a href="#PackageList-95"><span class="linenos"> 95</span></a>            <span class="p">[</span>
+</span><span id="PackageList-96"><a href="#PackageList-96"><span class="linenos"> 96</span></a>                <span class="n">package</span>
+</span><span id="PackageList-97"><a href="#PackageList-97"><span class="linenos"> 97</span></a>                <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span>
+</span><span id="PackageList-98"><a href="#PackageList-98"><span class="linenos"> 98</span></a>                <span class="k">if</span> <span class="ow">not</span> <span class="n">package</span><span class="o">.</span><span class="n">builtin</span> <span class="ow">and</span> <span class="n">package</span><span class="o">.</span><span class="n">distribution_name</span>
+</span><span id="PackageList-99"><a href="#PackageList-99"><span class="linenos"> 99</span></a>            <span class="p">]</span>
+</span><span id="PackageList-100"><a href="#PackageList-100"><span class="linenos">100</span></a>        <span class="p">)</span>
+</span><span id="PackageList-101"><a href="#PackageList-101"><span class="linenos">101</span></a>
+</span><span id="PackageList-102"><a href="#PackageList-102"><span class="linenos">102</span></a>    <span class="nd">@property</span>
+</span><span id="PackageList-103"><a href="#PackageList-103"><span class="linenos">103</span></a>    <span class="k">def</span> <span class="nf">builtin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="PackageList-104"><a href="#PackageList-104"><span class="linenos">104</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `PackageList` instance for the standard library packages in this list.&quot;&quot;&quot;</span>
+</span><span id="PackageList-105"><a href="#PackageList-105"><span class="linenos">105</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">([</span><span class="n">package</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">package</span><span class="o">.</span><span class="n">builtin</span><span class="p">])</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>A subclass of <code>list</code> to add convenience methods when working with a list of <code>packagelister.Package</code> objects.</p>
+</div>
+
+
+                            <div id="PackageList.names" class="classattr">
+                                <div class="attr variable">
+            <span class="name">names</span><span class="annotation">: list[str]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PackageList.names"></a>
+    
+            <div class="docstring"><p>Returns a list of <code>Package.name</code> strings.</p>
+</div>
+
+
+                            </div>
+                            <div id="PackageList.distribution_names" class="classattr">
+                                <div class="attr variable">
+            <span class="name">distribution_names</span><span class="annotation">: list[str | None]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PackageList.distribution_names"></a>
+    
+            <div class="docstring"><p>Returns a list of <code>Package.distribution_name</code> strings for third party packages in this list.</p>
+</div>
+
+
+                            </div>
+                            <div id="PackageList.third_party" class="classattr">
+                                <div class="attr variable">
+            <span class="name">third_party</span><span class="annotation">: Self</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PackageList.third_party"></a>
+    
+            <div class="docstring"><p>Returns a <code><a href="#PackageList">PackageList</a></code> instance for the third party packages in this list.</p>
+</div>
+
+
+                            </div>
+                            <div id="PackageList.builtin" class="classattr">
+                                <div class="attr variable">
+            <span class="name">builtin</span><span class="annotation">: Self</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PackageList.builtin"></a>
+    
+            <div class="docstring"><p>Returns a <code><a href="#PackageList">PackageList</a></code> instance for the standard library packages in this list.</p>
+</div>
+
+
+                            </div>
+                            <div class="inherited">
+                                <h5>Inherited Members</h5>
+                                <dl>
+                                    <div><dt>builtins.list</dt>
+                                <dd id="PackageList.__init__" class="function">list</dd>
+                <dd id="PackageList.clear" class="function">clear</dd>
+                <dd id="PackageList.copy" class="function">copy</dd>
+                <dd id="PackageList.append" class="function">append</dd>
+                <dd id="PackageList.insert" class="function">insert</dd>
+                <dd id="PackageList.extend" class="function">extend</dd>
+                <dd id="PackageList.pop" class="function">pop</dd>
+                <dd id="PackageList.remove" class="function">remove</dd>
+                <dd id="PackageList.index" class="function">index</dd>
+                <dd id="PackageList.count" class="function">count</dd>
+                <dd id="PackageList.reverse" class="function">reverse</dd>
+                <dd id="PackageList.sort" class="function">sort</dd>
+
+            </div>
+                                </dl>
+                            </div>
+                </section>
+                <section id="File">
+                            <input id="File-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">File</span>:
+
+                <label class="view-source-button" for="File-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#File"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="File-108"><a href="#File-108"><span class="linenos">108</span></a><span class="nd">@dataclass</span>
+</span><span id="File-109"><a href="#File-109"><span class="linenos">109</span></a><span class="k">class</span> <span class="nc">File</span><span class="p">:</span>
+</span><span id="File-110"><a href="#File-110"><span class="linenos">110</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing a scanned file and its list of imported packages.</span>
+</span><span id="File-111"><a href="#File-111"><span class="linenos">111</span></a>
+</span><span id="File-112"><a href="#File-112"><span class="linenos">112</span></a><span class="sd">    #### Fields:</span>
+</span><span id="File-113"><a href="#File-113"><span class="linenos">113</span></a><span class="sd">    * `path: Pathier` - Pathier object representing the path to this file</span>
+</span><span id="File-114"><a href="#File-114"><span class="linenos">114</span></a><span class="sd">    * `packages: packagelister.PackageList` - List of Package objects imported by this file</span>
+</span><span id="File-115"><a href="#File-115"><span class="linenos">115</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="File-116"><a href="#File-116"><span class="linenos">116</span></a>
+</span><span id="File-117"><a href="#File-117"><span class="linenos">117</span></a>    <span class="n">path</span><span class="p">:</span> <span class="n">Pathier</span>
+</span><span id="File-118"><a href="#File-118"><span class="linenos">118</span></a>    <span class="n">packages</span><span class="p">:</span> <span class="n">PackageList</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Dataclass representing a scanned file and its list of imported packages.</p>
+
+<h4 id="fields">Fields:</h4>
+
+<ul>
+<li><code>path: Pathier</code> - Pathier object representing the path to this file</li>
+<li><code>packages: packagelister.PackageList</code> - List of Package objects imported by this file</li>
+</ul>
+</div>
+
+
+                            <div id="File.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">File</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">path</span><span class="p">:</span> <span class="n">pathier</span><span class="o">.</span><span class="n">pathier</span><span class="o">.</span><span class="n">Pathier</span>,</span><span class="param">	<span class="n">packages</span><span class="p">:</span> <span class="n"><a href="#PackageList">packagelister.packagelister.PackageList</a></span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#File.__init__"></a>
+    
+    
+
+                            </div>
+                </section>
+                <section id="Project">
+                            <input id="Project-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+                    <div class="decorator">@dataclass</div>
+
+    <span class="def">class</span>
+    <span class="name">Project</span>:
+
+                <label class="view-source-button" for="Project-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Project"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Project-121"><a href="#Project-121"><span class="linenos">121</span></a><span class="nd">@dataclass</span>
+</span><span id="Project-122"><a href="#Project-122"><span class="linenos">122</span></a><span class="k">class</span> <span class="nc">Project</span><span class="p">:</span>
+</span><span id="Project-123"><a href="#Project-123"><span class="linenos">123</span></a>    <span class="sd">&quot;&quot;&quot;Dataclass representing a directory that&#39;s had its files scanned for imports.</span>
+</span><span id="Project-124"><a href="#Project-124"><span class="linenos">124</span></a>
+</span><span id="Project-125"><a href="#Project-125"><span class="linenos">125</span></a><span class="sd">    #### Fields:</span>
+</span><span id="Project-126"><a href="#Project-126"><span class="linenos">126</span></a><span class="sd">    * `files: list[packagelister.File]`&quot;&quot;&quot;</span>
+</span><span id="Project-127"><a href="#Project-127"><span class="linenos">127</span></a>
+</span><span id="Project-128"><a href="#Project-128"><span class="linenos">128</span></a>    <span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">File</span><span class="p">]</span>
+</span><span id="Project-129"><a href="#Project-129"><span class="linenos">129</span></a>
+</span><span id="Project-130"><a href="#Project-130"><span class="linenos">130</span></a>    <span class="nd">@property</span>
+</span><span id="Project-131"><a href="#Project-131"><span class="linenos">131</span></a>    <span class="k">def</span> <span class="nf">packages</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackageList</span><span class="p">:</span>
+</span><span id="Project-132"><a href="#Project-132"><span class="linenos">132</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `packagelister.PackageList` object for this instance with no duplicates.&quot;&quot;&quot;</span>
+</span><span id="Project-133"><a href="#Project-133"><span class="linenos">133</span></a>        <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="Project-134"><a href="#Project-134"><span class="linenos">134</span></a>        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+</span><span id="Project-135"><a href="#Project-135"><span class="linenos">135</span></a>            <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">packages</span><span class="p">:</span>
+</span><span id="Project-136"><a href="#Project-136"><span class="linenos">136</span></a>                <span class="k">if</span> <span class="n">package</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
+</span><span id="Project-137"><a href="#Project-137"><span class="linenos">137</span></a>                    <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="Project-138"><a href="#Project-138"><span class="linenos">138</span></a>        <span class="k">return</span> <span class="n">PackageList</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+</span><span id="Project-139"><a href="#Project-139"><span class="linenos">139</span></a>
+</span><span id="Project-140"><a href="#Project-140"><span class="linenos">140</span></a>    <span class="nd">@property</span>
+</span><span id="Project-141"><a href="#Project-141"><span class="linenos">141</span></a>    <span class="k">def</span> <span class="nf">requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackageList</span><span class="p">:</span>
+</span><span id="Project-142"><a href="#Project-142"><span class="linenos">142</span></a>        <span class="sd">&quot;&quot;&quot;Returns a `packagelister.PackageList` object of third party packages used by this project.&quot;&quot;&quot;</span>
+</span><span id="Project-143"><a href="#Project-143"><span class="linenos">143</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">third_party</span>
+</span><span id="Project-144"><a href="#Project-144"><span class="linenos">144</span></a>
+</span><span id="Project-145"><a href="#Project-145"><span class="linenos">145</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirements</span><span class="p">(</span>
+</span><span id="Project-146"><a href="#Project-146"><span class="linenos">146</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="Project-147"><a href="#Project-147"><span class="linenos">147</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="Project-148"><a href="#Project-148"><span class="linenos">148</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of formatted requirements (third party packages) using `version_specifier` (`==`,`&gt;=`, `&lt;=`, etc.).</span>
+</span><span id="Project-149"><a href="#Project-149"><span class="linenos">149</span></a>
+</span><span id="Project-150"><a href="#Project-150"><span class="linenos">150</span></a><span class="sd">        If no `version_specifier` is given, the returned list will just be package names.</span>
+</span><span id="Project-151"><a href="#Project-151"><span class="linenos">151</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Project-152"><a href="#Project-152"><span class="linenos">152</span></a>        <span class="k">return</span> <span class="p">[</span>
+</span><span id="Project-153"><a href="#Project-153"><span class="linenos">153</span></a>            <span class="n">requirement</span><span class="o">.</span><span class="n">get_formatted_requirement</span><span class="p">(</span><span class="n">version_specifier</span><span class="p">)</span>
+</span><span id="Project-154"><a href="#Project-154"><span class="linenos">154</span></a>            <span class="k">if</span> <span class="n">version_specifier</span>
+</span><span id="Project-155"><a href="#Project-155"><span class="linenos">155</span></a>            <span class="k">else</span> <span class="n">requirement</span><span class="o">.</span><span class="n">distribution_name</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">name</span>
+</span><span id="Project-156"><a href="#Project-156"><span class="linenos">156</span></a>            <span class="k">for</span> <span class="n">requirement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirements</span>
+</span><span id="Project-157"><a href="#Project-157"><span class="linenos">157</span></a>        <span class="p">]</span>
+</span><span id="Project-158"><a href="#Project-158"><span class="linenos">158</span></a>
+</span><span id="Project-159"><a href="#Project-159"><span class="linenos">159</span></a>    <span class="k">def</span> <span class="nf">get_files_by_package</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pathier</span><span class="p">]]:</span>
+</span><span id="Project-160"><a href="#Project-160"><span class="linenos">160</span></a>        <span class="sd">&quot;&quot;&quot;Returns a dictionary where the keys are package names and the values are lists of files that import the package.&quot;&quot;&quot;</span>
+</span><span id="Project-161"><a href="#Project-161"><span class="linenos">161</span></a>        <span class="n">files_by_package</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="Project-162"><a href="#Project-162"><span class="linenos">162</span></a>        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages</span><span class="p">:</span>
+</span><span id="Project-163"><a href="#Project-163"><span class="linenos">163</span></a>            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+</span><span id="Project-164"><a href="#Project-164"><span class="linenos">164</span></a>                <span class="n">name</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">name</span>
+</span><span id="Project-165"><a href="#Project-165"><span class="linenos">165</span></a>                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+</span><span id="Project-166"><a href="#Project-166"><span class="linenos">166</span></a>                    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">files_by_package</span><span class="p">:</span>
+</span><span id="Project-167"><a href="#Project-167"><span class="linenos">167</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">]</span>
+</span><span id="Project-168"><a href="#Project-168"><span class="linenos">168</span></a>                    <span class="k">else</span><span class="p">:</span>
+</span><span id="Project-169"><a href="#Project-169"><span class="linenos">169</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+</span><span id="Project-170"><a href="#Project-170"><span class="linenos">170</span></a>        <span class="k">return</span> <span class="n">files_by_package</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Dataclass representing a directory that's had its files scanned for imports.</p>
+
+<h4 id="fields">Fields:</h4>
+
+<ul>
+<li><code>files: list[packagelister.File]</code></li>
+</ul>
+</div>
+
+
+                            <div id="Project.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">Project</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n"><a href="#File">packagelister.packagelister.File</a></span><span class="p">]</span></span>)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#Project.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="Project.packages" class="classattr">
+                                <div class="attr variable">
+            <span class="name">packages</span><span class="annotation">: <a href="#PackageList">packagelister.packagelister.PackageList</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#Project.packages"></a>
+    
+            <div class="docstring"><p>Returns a <code>packagelister.PackageList</code> object for this instance with no duplicates.</p>
+</div>
+
+
+                            </div>
+                            <div id="Project.requirements" class="classattr">
+                                <div class="attr variable">
+            <span class="name">requirements</span><span class="annotation">: <a href="#PackageList">packagelister.packagelister.PackageList</a></span>
+
+        
+    </div>
+    <a class="headerlink" href="#Project.requirements"></a>
+    
+            <div class="docstring"><p>Returns a <code>packagelister.PackageList</code> object of third party packages used by this project.</p>
+</div>
+
+
+                            </div>
+                            <div id="Project.get_formatted_requirements" class="classattr">
+                                        <input id="Project.get_formatted_requirements-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_formatted_requirements</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="Project.get_formatted_requirements-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Project.get_formatted_requirements"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Project.get_formatted_requirements-145"><a href="#Project.get_formatted_requirements-145"><span class="linenos">145</span></a>    <span class="k">def</span> <span class="nf">get_formatted_requirements</span><span class="p">(</span>
+</span><span id="Project.get_formatted_requirements-146"><a href="#Project.get_formatted_requirements-146"><span class="linenos">146</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">version_specifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="Project.get_formatted_requirements-147"><a href="#Project.get_formatted_requirements-147"><span class="linenos">147</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="Project.get_formatted_requirements-148"><a href="#Project.get_formatted_requirements-148"><span class="linenos">148</span></a>        <span class="sd">&quot;&quot;&quot;Returns a list of formatted requirements (third party packages) using `version_specifier` (`==`,`&gt;=`, `&lt;=`, etc.).</span>
+</span><span id="Project.get_formatted_requirements-149"><a href="#Project.get_formatted_requirements-149"><span class="linenos">149</span></a>
+</span><span id="Project.get_formatted_requirements-150"><a href="#Project.get_formatted_requirements-150"><span class="linenos">150</span></a><span class="sd">        If no `version_specifier` is given, the returned list will just be package names.</span>
+</span><span id="Project.get_formatted_requirements-151"><a href="#Project.get_formatted_requirements-151"><span class="linenos">151</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Project.get_formatted_requirements-152"><a href="#Project.get_formatted_requirements-152"><span class="linenos">152</span></a>        <span class="k">return</span> <span class="p">[</span>
+</span><span id="Project.get_formatted_requirements-153"><a href="#Project.get_formatted_requirements-153"><span class="linenos">153</span></a>            <span class="n">requirement</span><span class="o">.</span><span class="n">get_formatted_requirement</span><span class="p">(</span><span class="n">version_specifier</span><span class="p">)</span>
+</span><span id="Project.get_formatted_requirements-154"><a href="#Project.get_formatted_requirements-154"><span class="linenos">154</span></a>            <span class="k">if</span> <span class="n">version_specifier</span>
+</span><span id="Project.get_formatted_requirements-155"><a href="#Project.get_formatted_requirements-155"><span class="linenos">155</span></a>            <span class="k">else</span> <span class="n">requirement</span><span class="o">.</span><span class="n">distribution_name</span> <span class="ow">or</span> <span class="n">requirement</span><span class="o">.</span><span class="n">name</span>
+</span><span id="Project.get_formatted_requirements-156"><a href="#Project.get_formatted_requirements-156"><span class="linenos">156</span></a>            <span class="k">for</span> <span class="n">requirement</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">requirements</span>
+</span><span id="Project.get_formatted_requirements-157"><a href="#Project.get_formatted_requirements-157"><span class="linenos">157</span></a>        <span class="p">]</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns a list of formatted requirements (third party packages) using <code>version_specifier</code> (<code>==</code>,<code>&gt;=</code>, <code>&lt;=</code>, etc.).</p>
+
+<p>If no <code>version_specifier</code> is given, the returned list will just be package names.</p>
+</div>
+
+
+                            </div>
+                            <div id="Project.get_files_by_package" class="classattr">
+                                        <input id="Project.get_files_by_package-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_files_by_package</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">pathier</span><span class="o">.</span><span class="n">pathier</span><span class="o">.</span><span class="n">Pathier</span><span class="p">]]</span>:</span></span>
+
+                <label class="view-source-button" for="Project.get_files_by_package-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Project.get_files_by_package"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Project.get_files_by_package-159"><a href="#Project.get_files_by_package-159"><span class="linenos">159</span></a>    <span class="k">def</span> <span class="nf">get_files_by_package</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Pathier</span><span class="p">]]:</span>
+</span><span id="Project.get_files_by_package-160"><a href="#Project.get_files_by_package-160"><span class="linenos">160</span></a>        <span class="sd">&quot;&quot;&quot;Returns a dictionary where the keys are package names and the values are lists of files that import the package.&quot;&quot;&quot;</span>
+</span><span id="Project.get_files_by_package-161"><a href="#Project.get_files_by_package-161"><span class="linenos">161</span></a>        <span class="n">files_by_package</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="Project.get_files_by_package-162"><a href="#Project.get_files_by_package-162"><span class="linenos">162</span></a>        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">packages</span><span class="p">:</span>
+</span><span id="Project.get_files_by_package-163"><a href="#Project.get_files_by_package-163"><span class="linenos">163</span></a>            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+</span><span id="Project.get_files_by_package-164"><a href="#Project.get_files_by_package-164"><span class="linenos">164</span></a>                <span class="n">name</span> <span class="o">=</span> <span class="n">package</span><span class="o">.</span><span class="n">name</span>
+</span><span id="Project.get_files_by_package-165"><a href="#Project.get_files_by_package-165"><span class="linenos">165</span></a>                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+</span><span id="Project.get_files_by_package-166"><a href="#Project.get_files_by_package-166"><span class="linenos">166</span></a>                    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">files_by_package</span><span class="p">:</span>
+</span><span id="Project.get_files_by_package-167"><a href="#Project.get_files_by_package-167"><span class="linenos">167</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">]</span>
+</span><span id="Project.get_files_by_package-168"><a href="#Project.get_files_by_package-168"><span class="linenos">168</span></a>                    <span class="k">else</span><span class="p">:</span>
+</span><span id="Project.get_files_by_package-169"><a href="#Project.get_files_by_package-169"><span class="linenos">169</span></a>                        <span class="n">files_by_package</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+</span><span id="Project.get_files_by_package-170"><a href="#Project.get_files_by_package-170"><span class="linenos">170</span></a>        <span class="k">return</span> <span class="n">files_by_package</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Returns a dictionary where the keys are package names and the values are lists of files that import the package.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="get_package_names_from_source">
+                            <input id="get_package_names_from_source-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_package_names_from_source</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">source</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="get_package_names_from_source-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#get_package_names_from_source"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="get_package_names_from_source-173"><a href="#get_package_names_from_source-173"><span class="linenos">173</span></a><span class="k">def</span> <span class="nf">get_package_names_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="get_package_names_from_source-174"><a href="#get_package_names_from_source-174"><span class="linenos">174</span></a>    <span class="sd">&quot;&quot;&quot;Scan `source` and extract the names of imported packages/modules.&quot;&quot;&quot;</span>
+</span><span id="get_package_names_from_source-175"><a href="#get_package_names_from_source-175"><span class="linenos">175</span></a>    <span class="n">tree</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+</span><span id="get_package_names_from_source-176"><a href="#get_package_names_from_source-176"><span class="linenos">176</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="get_package_names_from_source-177"><a href="#get_package_names_from_source-177"><span class="linenos">177</span></a>    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+</span><span id="get_package_names_from_source-178"><a href="#get_package_names_from_source-178"><span class="linenos">178</span></a>        <span class="n">type_</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span id="get_package_names_from_source-179"><a href="#get_package_names_from_source-179"><span class="linenos">179</span></a>        <span class="n">package</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span id="get_package_names_from_source-180"><a href="#get_package_names_from_source-180"><span class="linenos">180</span></a>        <span class="k">if</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">Import</span><span class="p">:</span>
+</span><span id="get_package_names_from_source-181"><a href="#get_package_names_from_source-181"><span class="linenos">181</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># type: ignore</span>
+</span><span id="get_package_names_from_source-182"><a href="#get_package_names_from_source-182"><span class="linenos">182</span></a>        <span class="k">elif</span> <span class="n">type_</span> <span class="o">==</span> <span class="n">ast</span><span class="o">.</span><span class="n">ImportFrom</span><span class="p">:</span>
+</span><span id="get_package_names_from_source-183"><a href="#get_package_names_from_source-183"><span class="linenos">183</span></a>            <span class="n">package</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">module</span>  <span class="c1"># type: ignore</span>
+</span><span id="get_package_names_from_source-184"><a href="#get_package_names_from_source-184"><span class="linenos">184</span></a>        <span class="k">if</span> <span class="n">package</span><span class="p">:</span>
+</span><span id="get_package_names_from_source-185"><a href="#get_package_names_from_source-185"><span class="linenos">185</span></a>            <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">package</span><span class="p">:</span>
+</span><span id="get_package_names_from_source-186"><a href="#get_package_names_from_source-186"><span class="linenos">186</span></a>                <span class="n">package</span> <span class="o">=</span> <span class="n">package</span><span class="p">[:</span> <span class="n">package</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
+</span><span id="get_package_names_from_source-187"><a href="#get_package_names_from_source-187"><span class="linenos">187</span></a>            <span class="n">packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="get_package_names_from_source-188"><a href="#get_package_names_from_source-188"><span class="linenos">188</span></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">packages</span><span class="p">)))</span>
 </span></pre></div>
 
 
@@ -189,116 +945,72 @@
 
 
                 </section>
-                <section id="remove_builtins">
-                            <input id="remove_builtins-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="scan_file">
+                            <input id="scan_file-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">remove_builtins</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">packages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+        <span class="name">scan_file</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">file</span><span class="p">:</span> <span class="n">pathier</span><span class="o">.</span><span class="n">pathier</span><span class="o">.</span><span class="n">Pathier</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n"><a href="#File">packagelister.packagelister.File</a></span>:</span></span>
 
-                <label class="view-source-button" for="remove_builtins-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="scan_file-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#remove_builtins"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="remove_builtins-28"><a href="#remove_builtins-28"><span class="linenos">28</span></a><span class="k">def</span> <span class="nf">remove_builtins</span><span class="p">(</span><span class="n">packages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="remove_builtins-29"><a href="#remove_builtins-29"><span class="linenos">29</span></a>    <span class="sd">&quot;&quot;&quot;Remove built in packages/modules from a list of package names.&quot;&quot;&quot;</span>
-</span><span id="remove_builtins-30"><a href="#remove_builtins-30"><span class="linenos">30</span></a>    <span class="n">builtins</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdlib_module_names</span><span class="p">)</span>
-</span><span id="remove_builtins-31"><a href="#remove_builtins-31"><span class="linenos">31</span></a>    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">builtins</span><span class="p">,</span> <span class="n">packages</span><span class="p">)</span>
+    <a class="headerlink" href="#scan_file"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="scan_file-191"><a href="#scan_file-191"><span class="linenos">191</span></a><span class="k">def</span> <span class="nf">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">Pathish</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">File</span><span class="p">:</span>
+</span><span id="scan_file-192"><a href="#scan_file-192"><span class="linenos">192</span></a>    <span class="sd">&quot;&quot;&quot;Scan `file` for imports and return a `packagelister.File` instance.&quot;&quot;&quot;</span>
+</span><span id="scan_file-193"><a href="#scan_file-193"><span class="linenos">193</span></a>    <span class="n">file</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="o">==</span> <span class="n">Pathier</span> <span class="k">else</span> <span class="n">file</span>
+</span><span id="scan_file-194"><a href="#scan_file-194"><span class="linenos">194</span></a>    <span class="n">source</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+</span><span id="scan_file-195"><a href="#scan_file-195"><span class="linenos">195</span></a>    <span class="n">packages</span> <span class="o">=</span> <span class="n">get_package_names_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+</span><span id="scan_file-196"><a href="#scan_file-196"><span class="linenos">196</span></a>    <span class="n">used_packages</span> <span class="o">=</span> <span class="n">PackageList</span><span class="p">(</span>
+</span><span id="scan_file-197"><a href="#scan_file-197"><span class="linenos">197</span></a>        <span class="p">[</span>
+</span><span id="scan_file-198"><a href="#scan_file-198"><span class="linenos">198</span></a>            <span class="n">Package</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+</span><span id="scan_file-199"><a href="#scan_file-199"><span class="linenos">199</span></a>            <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">packages</span>
+</span><span id="scan_file-200"><a href="#scan_file-200"><span class="linenos">200</span></a>            <span class="k">if</span> <span class="n">package</span>
+</span><span id="scan_file-201"><a href="#scan_file-201"><span class="linenos">201</span></a>            <span class="ow">not</span> <span class="ow">in</span> <span class="n">file</span><span class="o">.</span><span class="n">parts</span>  <span class="c1"># don&#39;t want to pick up modules in the scanned directory</span>
+</span><span id="scan_file-202"><a href="#scan_file-202"><span class="linenos">202</span></a>        <span class="p">]</span>
+</span><span id="scan_file-203"><a href="#scan_file-203"><span class="linenos">203</span></a>    <span class="p">)</span>
+</span><span id="scan_file-204"><a href="#scan_file-204"><span class="linenos">204</span></a>    <span class="k">return</span> <span class="n">File</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">used_packages</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Remove built in packages/modules from a list of package names.</p>
+            <div class="docstring"><p>Scan <code>file</code> for imports and return a <code>packagelister.File</code> instance.</p>
 </div>
 
 
                 </section>
-                <section id="scan">
-                            <input id="scan-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="scan_dir">
+                            <input id="scan_dir-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">scan</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">project_dir</span><span class="p">:</span> <span class="n">pathier</span><span class="o">.</span><span class="n">pathier</span><span class="o">.</span><span class="n">Pathier</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">include_builtins</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></span><span class="return-annotation">) -> <span class="nb">dict</span>:</span></span>
+        <span class="name">scan_dir</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">path</span><span class="p">:</span> <span class="n">pathier</span><span class="o">.</span><span class="n">pathier</span><span class="o">.</span><span class="n">Pathier</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></span><span class="return-annotation">) -> <span class="n"><a href="#Project">packagelister.packagelister.Project</a></span>:</span></span>
 
-                <label class="view-source-button" for="scan-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="scan_dir-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#scan"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="scan-34"><a href="#scan-34"><span class="linenos">34</span></a><span class="k">def</span> <span class="nf">scan</span><span class="p">(</span><span class="n">project_dir</span><span class="p">:</span> <span class="n">Pathish</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_builtins</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="scan-35"><a href="#scan-35"><span class="linenos">35</span></a>    <span class="sd">&quot;&quot;&quot;Recursively scans a directory for python files to determine</span>
-</span><span id="scan-36"><a href="#scan-36"><span class="linenos">36</span></a><span class="sd">    what packages are in use, as well as the version number if applicable.</span>
-</span><span id="scan-37"><a href="#scan-37"><span class="linenos">37</span></a>
-</span><span id="scan-38"><a href="#scan-38"><span class="linenos">38</span></a><span class="sd">    Returns a dictionary where the keys are package names and</span>
-</span><span id="scan-39"><a href="#scan-39"><span class="linenos">39</span></a><span class="sd">    the values are dictionaries with the keys `version` for the version number of the package</span>
-</span><span id="scan-40"><a href="#scan-40"><span class="linenos">40</span></a><span class="sd">    if there is one (None if there isn&#39;t) and `files` for a list of the files that import the package.</span>
-</span><span id="scan-41"><a href="#scan-41"><span class="linenos">41</span></a>
-</span><span id="scan-42"><a href="#scan-42"><span class="linenos">42</span></a><span class="sd">    :param project_dir: Can be an absolute or relative path to a directory or a single file (.py).</span>
-</span><span id="scan-43"><a href="#scan-43"><span class="linenos">43</span></a><span class="sd">    If it is relative, it will be assumed to be relative to the current working directory.</span>
-</span><span id="scan-44"><a href="#scan-44"><span class="linenos">44</span></a><span class="sd">    If an argument isn&#39;t given, the current working directory will be scanned.</span>
-</span><span id="scan-45"><a href="#scan-45"><span class="linenos">45</span></a><span class="sd">    If the path doesn&#39;t exist, an empty dictionary is returned.&quot;&quot;&quot;</span>
-</span><span id="scan-46"><a href="#scan-46"><span class="linenos">46</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="p">:</span>
-</span><span id="scan-47"><a href="#scan-47"><span class="linenos">47</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">Pathier</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span>
-</span><span id="scan-48"><a href="#scan-48"><span class="linenos">48</span></a>    <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">project_dir</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-</span><span id="scan-49"><a href="#scan-49"><span class="linenos">49</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">project_dir</span><span class="p">)</span>
-</span><span id="scan-50"><a href="#scan-50"><span class="linenos">50</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
-</span><span id="scan-51"><a href="#scan-51"><span class="linenos">51</span></a>        <span class="n">project_dir</span> <span class="o">=</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
-</span><span id="scan-52"><a href="#scan-52"><span class="linenos">52</span></a>
-</span><span id="scan-53"><a href="#scan-53"><span class="linenos">53</span></a>    <span class="c1"># Raise error if project_dir doesn&#39;t exist</span>
-</span><span id="scan-54"><a href="#scan-54"><span class="linenos">54</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-</span><span id="scan-55"><a href="#scan-55"><span class="linenos">55</span></a>        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-</span><span id="scan-56"><a href="#scan-56"><span class="linenos">56</span></a>            <span class="sa">f</span><span class="s2">&quot;Can&#39;t scan directory that doesn&#39;t exist: </span><span class="si">{</span><span class="n">project_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="scan-57"><a href="#scan-57"><span class="linenos">57</span></a>        <span class="p">)</span>
-</span><span id="scan-58"><a href="#scan-58"><span class="linenos">58</span></a>    <span class="c1"># You can scan a non python file one at a time if you reeeally want to.</span>
-</span><span id="scan-59"><a href="#scan-59"><span class="linenos">59</span></a>    <span class="k">if</span> <span class="n">project_dir</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-</span><span id="scan-60"><a href="#scan-60"><span class="linenos">60</span></a>        <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">project_dir</span><span class="p">]</span>
-</span><span id="scan-61"><a href="#scan-61"><span class="linenos">61</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="scan-62"><a href="#scan-62"><span class="linenos">62</span></a>        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">project_dir</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">))</span>
-</span><span id="scan-63"><a href="#scan-63"><span class="linenos">63</span></a>
-</span><span id="scan-64"><a href="#scan-64"><span class="linenos">64</span></a>    <span class="n">bar</span> <span class="o">=</span> <span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">width_ratio</span><span class="o">=</span><span class="mf">0.33</span><span class="p">)</span>
-</span><span id="scan-65"><a href="#scan-65"><span class="linenos">65</span></a>    <span class="n">used_packages</span> <span class="o">=</span> <span class="p">{}</span>
-</span><span id="scan-66"><a href="#scan-66"><span class="linenos">66</span></a>    <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-</span><span id="scan-67"><a href="#scan-67"><span class="linenos">67</span></a>        <span class="n">bar</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Scanning </span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="scan-68"><a href="#scan-68"><span class="linenos">68</span></a>        <span class="n">source</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-</span><span id="scan-69"><a href="#scan-69"><span class="linenos">69</span></a>        <span class="n">packages</span> <span class="o">=</span> <span class="n">get_packages_from_source</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span id="scan-70"><a href="#scan-70"><span class="linenos">70</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_builtins</span><span class="p">:</span>
-</span><span id="scan-71"><a href="#scan-71"><span class="linenos">71</span></a>            <span class="n">packages</span> <span class="o">=</span> <span class="n">remove_builtins</span><span class="p">(</span><span class="n">packages</span><span class="p">)</span>
-</span><span id="scan-72"><a href="#scan-72"><span class="linenos">72</span></a>        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
-</span><span id="scan-73"><a href="#scan-73"><span class="linenos">73</span></a>            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">with_stem</span><span class="p">(</span><span class="n">package</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-</span><span id="scan-74"><a href="#scan-74"><span class="linenos">74</span></a>                <span class="k">if</span> <span class="p">(</span>
-</span><span id="scan-75"><a href="#scan-75"><span class="linenos">75</span></a>                    <span class="n">package</span> <span class="ow">in</span> <span class="n">used_packages</span>
-</span><span id="scan-76"><a href="#scan-76"><span class="linenos">76</span></a>                    <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">][</span><span class="s2">&quot;files&quot;</span><span class="p">]</span>
-</span><span id="scan-77"><a href="#scan-77"><span class="linenos">77</span></a>                <span class="p">):</span>
-</span><span id="scan-78"><a href="#scan-78"><span class="linenos">78</span></a>                    <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">][</span><span class="s2">&quot;files&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
-</span><span id="scan-79"><a href="#scan-79"><span class="linenos">79</span></a>                <span class="k">else</span><span class="p">:</span>
-</span><span id="scan-80"><a href="#scan-80"><span class="linenos">80</span></a>                    <span class="k">try</span><span class="p">:</span>
-</span><span id="scan-81"><a href="#scan-81"><span class="linenos">81</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">version</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
-</span><span id="scan-82"><a href="#scan-82"><span class="linenos">82</span></a>                    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-</span><span id="scan-83"><a href="#scan-83"><span class="linenos">83</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="scan-84"><a href="#scan-84"><span class="linenos">84</span></a>                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="scan-85"><a href="#scan-85"><span class="linenos">85</span></a>                        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="scan-86"><a href="#scan-86"><span class="linenos">86</span></a>                        <span class="n">package_version</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="scan-87"><a href="#scan-87"><span class="linenos">87</span></a>                    <span class="n">used_packages</span><span class="p">[</span><span class="n">package</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="scan-88"><a href="#scan-88"><span class="linenos">88</span></a>                        <span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">)],</span>
-</span><span id="scan-89"><a href="#scan-89"><span class="linenos">89</span></a>                        <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">package_version</span><span class="p">,</span>
-</span><span id="scan-90"><a href="#scan-90"><span class="linenos">90</span></a>                    <span class="p">}</span>
-</span><span id="scan-91"><a href="#scan-91"><span class="linenos">91</span></a>    <span class="k">return</span> <span class="n">used_packages</span>
+    <a class="headerlink" href="#scan_dir"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="scan_dir-207"><a href="#scan_dir-207"><span class="linenos">207</span></a><span class="k">def</span> <span class="nf">scan_dir</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Pathish</span><span class="p">,</span> <span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Project</span><span class="p">:</span>
+</span><span id="scan_dir-208"><a href="#scan_dir-208"><span class="linenos">208</span></a>    <span class="sd">&quot;&quot;&quot;Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance.</span>
+</span><span id="scan_dir-209"><a href="#scan_dir-209"><span class="linenos">209</span></a>
+</span><span id="scan_dir-210"><a href="#scan_dir-210"><span class="linenos">210</span></a><span class="sd">    Set `quiet` to `False` to prevent printing.&quot;&quot;&quot;</span>
+</span><span id="scan_dir-211"><a href="#scan_dir-211"><span class="linenos">211</span></a>    <span class="n">path</span> <span class="o">=</span> <span class="n">Pathier</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">Pathier</span> <span class="k">else</span> <span class="n">path</span>
+</span><span id="scan_dir-212"><a href="#scan_dir-212"><span class="linenos">212</span></a>    <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">))</span>
+</span><span id="scan_dir-213"><a href="#scan_dir-213"><span class="linenos">213</span></a>    <span class="k">if</span> <span class="n">quiet</span><span class="p">:</span>
+</span><span id="scan_dir-214"><a href="#scan_dir-214"><span class="linenos">214</span></a>        <span class="n">project</span> <span class="o">=</span> <span class="n">Project</span><span class="p">([</span><span class="n">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">])</span>
+</span><span id="scan_dir-215"><a href="#scan_dir-215"><span class="linenos">215</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="scan_dir-216"><a href="#scan_dir-216"><span class="linenos">216</span></a>        <span class="n">num_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+</span><span id="scan_dir-217"><a href="#scan_dir-217"><span class="linenos">217</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Scanning </span><span class="si">{</span><span class="n">num_files</span><span class="si">}</span><span class="s2"> files in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> for imports...&quot;</span><span class="p">)</span>
+</span><span id="scan_dir-218"><a href="#scan_dir-218"><span class="linenos">218</span></a>        <span class="k">with</span> <span class="n">ProgBar</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">width_ratio</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span> <span class="k">as</span> <span class="n">bar</span><span class="p">:</span>
+</span><span id="scan_dir-219"><a href="#scan_dir-219"><span class="linenos">219</span></a>            <span class="n">project</span> <span class="o">=</span> <span class="n">Project</span><span class="p">(</span>
+</span><span id="scan_dir-220"><a href="#scan_dir-220"><span class="linenos">220</span></a>                <span class="p">[</span><span class="n">bar</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">return_object</span><span class="o">=</span><span class="n">scan_file</span><span class="p">(</span><span class="n">file</span><span class="p">))</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]</span>
+</span><span id="scan_dir-221"><a href="#scan_dir-221"><span class="linenos">221</span></a>            <span class="p">)</span>
+</span><span id="scan_dir-222"><a href="#scan_dir-222"><span class="linenos">222</span></a>    <span class="k">return</span> <span class="n">project</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Recursively scans a directory for python files to determine
-what packages are in use, as well as the version number if applicable.</p>
+            <div class="docstring"><p>Recursively scan <code>*.py</code> files in <code>path</code> for imports and return a <code>packagelister.Project</code> instance.</p>
 
-<p>Returns a dictionary where the keys are package names and
-the values are dictionaries with the keys <code>version</code> for the version number of the package
-if there is one (None if there isn't) and <code>files</code> for a list of the files that import the package.</p>
-
-<h6 id="parameters">Parameters</h6>
-
-<ul>
-<li><strong>project_dir</strong>:  Can be an absolute or relative path to a directory or a single file (.py).
-If it is relative, it will be assumed to be relative to the current working directory.
-If an argument isn't given, the current working directory will be scanned.
-If the path doesn't exist, an empty dictionary is returned.</li>
-</ul>
+<p>Set <code>quiet</code> to <code>False</code> to prevent printing.</p>
 </div>
 
 
