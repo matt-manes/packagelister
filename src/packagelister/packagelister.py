@@ -30,13 +30,13 @@ class Package:
 
     #### Fields:
     * `name: str`
-    * `distribution_name: str | None` - the name used to `pip install`, sometimes this differs from `name`
-    * `version: str | None`
+    * `distribution_name: str` - the name used to `pip install`, sometimes this differs from `name`
+    * `version: str`
     * `builtin: bool` - whether this is a standard library package or not"""
 
     name: str
-    distribution_name: str | None
-    version: str | None
+    distribution_name: str
+    version: str
     builtin: bool
 
     def get_formatted_requirement(self, version_specifier: str):
@@ -54,8 +54,8 @@ class Package:
             distribution_name = distributions[0]
             version = importlib.metadata.version(distribution_name)
         else:
-            distribution_name = None
-            version = None
+            distribution_name = ""
+            version = ""
         return cls(package_name, distribution_name, version, is_builtin(package_name))
 
     @classmethod
