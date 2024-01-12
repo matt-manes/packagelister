@@ -33,8 +33,8 @@ Package(name='pytest', distribution_name='pytest', version='7.2.1', builtin=Fals
 Package(name='sys', distribution_name=None, version=None, builtin=True)
 Package(name='typing_extensions', distribution_name='typing_extensions', version='4.7.1', builtin=False)
 >>>
->>> print(project.get_formatted_requirements("=>"))
-['pathier=>1.3.4', 'printbuddies=>1.4.1', 'pytest=>7.2.1', 'typing_extensions=>4.7.1']
+>>> print(project.get_formatted_requirements(">="))
+['pathier>=1.3.4', 'printbuddies>=1.4.1', 'pytest>=7.2.1', 'typing_extensions>=4.7.1']
 >>>
 >>> print(json.dumps(project.get_files_by_package(), indent=2))
 {
