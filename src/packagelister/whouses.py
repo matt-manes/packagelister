@@ -38,7 +38,7 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     for project in root.iterdir():
         if project.is_dir() and project.stem not in ignore:
             try:
-                if package in packagelister.scan_dir(project).unique_packages.names:
+                if package in packagelister.scan_dir(project).packages.names:
                     package_users.append(project.stem)
             except Exception as e:
                 err = str(e)

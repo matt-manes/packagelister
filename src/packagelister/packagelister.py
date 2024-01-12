@@ -98,8 +98,8 @@ class Project:
     files: list[File]
 
     @property
-    def unique_packages(self) -> PackageList:
-        """Returns a `packagelister.PackageList` object for this object that's had duplicates removed."""
+    def packages(self) -> PackageList:
+        """Returns a `packagelister.PackageList` object for this instance with no duplicates."""
         packages = []
         for file in self.files:
             for package in file.packages:
@@ -110,7 +110,7 @@ class Project:
     @property
     def requirements(self) -> PackageList:
         """Returns a `packagelister.PackageList` object of third party packages used by this project."""
-        return self.unique_packages.third_party
+        return self.packages.third_party
 
     def get_formatted_requirements(
         self, version_specifier: str | None = None
@@ -129,7 +129,7 @@ class Project:
     def get_files_by_package(self) -> dict[str, list[Pathier]]:
         """Returns a dictionary where the keys are package names and the values are lists of files that import the package."""
         files_by_package = {}
-        for package in self.unique_packages:
+        for package in self.packages:
             for file in self.files:
                 name = package.name
                 if name in file.packages.names:

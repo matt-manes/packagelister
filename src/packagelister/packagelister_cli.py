@@ -63,7 +63,7 @@ def main(args: argparse.Namespace | None = None):
         *(
             project.get_formatted_requirements(args.versions)
             if not args.builtins
-            else project.unique_packages.names
+            else project.packages.names
         ),
         sep="\n",
     )
@@ -79,7 +79,7 @@ def main(args: argparse.Namespace | None = None):
             print(f"{package}:")
             print(*[f"  {file}" for file in files], sep="\n")
     if args.debug:
-        print(*project.unique_packages, sep="\n")
+        print(*project.packages, sep="\n")
 
 
 if __name__ == "__main__":
