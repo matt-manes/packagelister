@@ -1,6 +1,7 @@
 import argparse
 
 from pathier import Pathier
+from printbuddies import ProgBar
 
 from packagelister import packagelister
 
@@ -35,10 +36,14 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     """Find what sub-folders of `root`, excluding those in `ignore`, have files that use `package`."""
     package_users = []
     scan_fails = {}  # Error message: [projects]
-    for project in root.iterdir():
-        if project.is_dir() and project.stem not in ignore:
+    projects = [
+        path for path in root.iterdir() if path.is_dir() and path.stem not in ignore
+    ]
+    num_projects = len(projects)
+    with ProgBar(num_projects, width_ratio=0.3) as bar:
+        for project in projects:
             try:
-                if package in packagelister.scan_dir(project).packages.names:
+                if package in packagelister.scan_dir(project, True).packages.names:
                     package_users.append(project.stem)
             except Exception as e:
                 err = str(e)
@@ -46,20 +51,24 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
                     scan_fails[err] = [project]
                 else:
                     scan_fails[err].append(project)
+            bar.display(suffix=f"Scanning {project.stem}...")
     print()
-    print("The following errors occured during the scan:")
-    for fail in scan_fails:
-        print(f"ERROR: {fail}:")
-        print(*scan_fails[fail], sep="\n")
-        print()
+    if scan_fails:
+        print("The following errors occured during the scan:")
+        for fail in scan_fails:
+            print(f"ERROR: {fail}:")
+            print(*scan_fails[fail], sep="\n")
+            print()
     return package_users
 
 
 def main(args: argparse.Namespace | None = None):
     if not args:
         args = get_args()
-    package_users = find(Pathier.cwd(), args.package, args.ignore)
-    print(f"The following folders have files that use {args.package}:")
+    package_users = find(
+        Pathier.cwd(), args.package, [".pytest_cache", "__pycache__"] + args.ignore
+    )
+    print(f"The following folders have files that use `{args.package}`:")
     print(*package_users, sep="\n")
 
 
