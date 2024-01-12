@@ -179,7 +179,7 @@ def scan_dir(path: Pathish) -> Project:
     path = Pathier(path) if not type(path) == Pathier else path
     files = list(path.rglob("*.py"))
     print(f"Scanning {path}...")
-    with ProgBar(len(files)) as bar:
+    with ProgBar(len(files), width_ratio=0.3) as bar:
         project = Project(
             [bar.display(return_object=scan_file(file)) for file in files]
         )
