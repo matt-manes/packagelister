@@ -11,21 +11,35 @@ packages_distributions = importlib.metadata.packages_distributions()
 
 
 def is_builtin(package_name: str) -> bool:
+    """Returns whether `package_name` is a standard library module or not."""
     return package_name in sys.stdlib_module_names
 
 
 @dataclass
 class Package:
+    """Dataclass representing an imported package.
+
+    #### Fields:
+    * `name: str`
+    * `distribution_name: str | None` - the name used to `pip install`, sometimes this differs from `name`
+    * `version: str | None`
+    * `builtin: bool` - whether this is a standard library package or not"""
+
     name: str
     distribution_name: str | None
     version: str | None
     builtin: bool
 
     def format_requirement(self, version_specifier: str):
+        """Returns a string of the form `{self.distribution_name}{version_specifier}{self.version}`.
+        e.g for this package: `"packagelister>=2.0.0"`"""
         return f"{self.distribution_name}{version_specifier}{self.version}"
 
     @classmethod
     def from_name(cls, package_name: str) -> Self:
+        """Returns a `Package` instance from the package name.
+
+        Will attempt to determine the other class fields."""
         distributions = packages_distributions.get(package_name)
         if distributions:
             distribution_name = distributions[0]
@@ -37,12 +51,16 @@ class Package:
 
 
 class PackageList(list[Package]):
+    """A subclass of `list` to add convenience methods when working with a list of `packagelister.Package` objects."""
+
     @property
     def names(self) -> list[str]:
+        """Returns a list of `Package.name` strings."""
         return [package.name for package in self]
 
     @property
     def third_party(self) -> Self:
+        """Returns a `PackageList` instance for the third party packages in this list."""
         return self.__class__(
             [
                 package
@@ -53,21 +71,35 @@ class PackageList(list[Package]):
 
     @property
     def builtin(self) -> Self:
+        """Returns a `PackageList` instance for the standard library packages in this list."""
         return self.__class__([package for package in self if package.builtin])
 
 
 @dataclass
 class File:
+    """Dataclass representing a scanned file and its list of imported packages.
+
+    #### Fields:
+    * `path: Pathier` - Pathier object representing the path to this file
+    * `packages: packagelister.PackageList` - List of Package objects imported by this file
+    """
+
     path: Pathier
     packages: PackageList
 
 
 @dataclass
 class Project:
+    """Dataclass representing a directory that's had its files scanned for imports.
+
+    #### Fields:
+    * `files: list[packagelister.File]`"""
+
     files: list[File]
 
     @property
     def unique_packages(self) -> PackageList:
+        """Returns a `packagelister.PackageList` object for this object that's had duplicates removed."""
         packages = []
         for file in self.files:
             for package in file.packages:
@@ -77,11 +109,16 @@ class Project:
 
     @property
     def requirements(self) -> PackageList:
+        """Returns a `packagelister.PackageList` object of third party packages used by this project."""
         return self.unique_packages.third_party
 
     def get_formatted_requirements(
         self, version_specifier: str | None = None
     ) -> list[str]:
+        """Returns a list of formatted requirements (third party packages) using `version_specifier` (`==`,`>=`, `<=`, etc.).
+
+        If no `version_specifier` is given, the returned list will just be package names.
+        """
         return [
             requirement.format_requirement(version_specifier)
             if version_specifier
@@ -89,7 +126,8 @@ class Project:
             for requirement in self.requirements
         ]
 
-    def get_files_by_package(self) -> dict[Package, list[Pathier]]:
+    def get_files_by_package(self) -> dict[str, list[Pathier]]:
+        """Returns a dictionary where the keys are package names and the values are lists of files that import the package."""
         files_by_package = {}
         for package in self.unique_packages:
             for file in self.files:
@@ -121,6 +159,7 @@ def get_package_names_from_source(source: str) -> list[str]:
 
 
 def scan_file(file: Pathish) -> File:
+    """Scan `file` for imports and return a `packagelister.File` instance."""
     file = Pathier(file) if not type(file) == Pathier else file
     source = file.read_text(encoding="utf-8")
     packages = get_package_names_from_source(source)
@@ -136,6 +175,7 @@ def scan_file(file: Pathish) -> File:
 
 
 def scan_dir(path: Pathish) -> Project:
+    """Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance."""
     path = Pathier(path) if not type(path) == Pathier else path
     files = list(path.rglob("*.py"))
     print(f"Scanning {path}...")

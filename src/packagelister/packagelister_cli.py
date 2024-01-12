@@ -6,11 +6,14 @@ from packagelister import packagelister
 
 
 def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="packagelister",
+        description=""" Scan the current directory for imported packages. """,
+    )
 
     parser.add_argument(
         "-f",
-        "--show_files",
+        "--files",
         action="store_true",
         help=""" Show which files imported each of the packages. """,
     )
@@ -19,7 +22,7 @@ def get_args() -> argparse.Namespace:
         "-g",
         "--generate_requirements",
         action="store_true",
-        help=""" Generate a requirements.txt file. """,
+        help=""" Generate a requirements.txt file in the current directory. """,
     )
 
     parser.add_argument(
@@ -33,13 +36,18 @@ def get_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-i",
-        "--include_builtins",
+        "-b",
+        "--builtins",
         action="store_true",
-        help=""" Include built in standard library modules. """,
+        help=""" Include built in standard library modules in terminal display. """,
     )
 
-    parser.add_argument("-d", "--debug", action="store_true")
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help=""" Print the Package objects found during the scan. """,
+    )
 
     args = parser.parse_args()
 
@@ -54,7 +62,7 @@ def main(args: argparse.Namespace | None = None):
     print(
         *(
             project.get_formatted_requirements(args.versions)
-            if not args.include_builtins
+            if not args.builtins
             else project.unique_packages.names
         ),
         sep="\n",
@@ -64,7 +72,7 @@ def main(args: argparse.Namespace | None = None):
         (Pathier.cwd() / "requirements.txt").join(
             project.get_formatted_requirements(args.versions)
         )
-    if args.show_files:
+    if args.files:
         print("Files importing each package:")
         files_by_package = project.get_files_by_package()
         for package, files in files_by_package.items():

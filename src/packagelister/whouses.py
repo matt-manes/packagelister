@@ -6,7 +6,11 @@ from packagelister import packagelister
 
 
 def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="whouses",
+        description=""" Determine what sub-folders in the current directory use the specified package.
+        Useful for knowing which projects need to be updated when upgrading an installed package.""",
+    )
 
     parser.add_argument(
         "package",
