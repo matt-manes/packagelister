@@ -213,7 +213,7 @@ def scan_dir(path: Pathish, quiet: bool = False) -> Project:
         project = Project([scan_file(file) for file in files])
     else:
         num_files = len(files)
-        print(f"Scanning {num_files} in {path}...")
+        print(f"Scanning {num_files} files in {path} for imports...")
         with ProgBar(len(files), width_ratio=0.3) as bar:
             project = Project(
                 [bar.display(return_object=scan_file(file)) for file in files]
