@@ -174,13 +174,19 @@ def scan_file(file: Pathish) -> File:
     return File(file, used_packages)
 
 
-def scan_dir(path: Pathish) -> Project:
-    """Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance."""
+def scan_dir(path: Pathish, quiet: bool = False) -> Project:
+    """Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance.
+
+    Set `quiet` to `False` to prevent printing."""
     path = Pathier(path) if not type(path) == Pathier else path
     files = list(path.rglob("*.py"))
-    print(f"Scanning {path}...")
-    with ProgBar(len(files), width_ratio=0.3) as bar:
-        project = Project(
-            [bar.display(return_object=scan_file(file)) for file in files]
-        )
+    if quiet:
+        project = Project([scan_file(file) for file in files])
+    else:
+        num_files = len(files)
+        print(f"Scanning {num_files} in {path}...")
+        with ProgBar(len(files), width_ratio=0.3) as bar:
+            project = Project(
+                [bar.display(return_object=scan_file(file)) for file in files]
+            )
     return project
