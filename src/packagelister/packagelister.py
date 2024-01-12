@@ -7,7 +7,16 @@ from pathier import Pathier, Pathish
 from printbuddies import ProgBar
 from typing_extensions import Self
 
+# figured it's more efficient to have this on hand than calling the function everytime I need the mapping
 packages_distributions = importlib.metadata.packages_distributions()
+# A list of distributions for this Python install
+distributions = set(
+    [
+        name
+        for distributions in packages_distributions.values()
+        for name in distributions
+    ]
+)
 
 
 def is_builtin(package_name: str) -> bool:
@@ -49,6 +58,21 @@ class Package:
             version = None
         return cls(package_name, distribution_name, version, is_builtin(package_name))
 
+    @classmethod
+    def from_distribution_name(cls, distribution_name: str) -> Self:
+        """Returns a `Package` instance from the distribution name.
+
+        Returned instance will have an empty `name` field.
+
+        Raises `ValueError` if `distribution_name` isn't found in `importlib.metadata.packages_distributions()`.
+        """
+        if distribution_name not in distributions:
+            raise ValueError(
+                f"`{distribution_name}` not found in Python's installed distributions."
+            )
+        version = importlib.metadata.version(distribution_name)
+        return cls("", distribution_name, version, False)
+
 
 class PackageList(list[Package]):
     """A subclass of `list` to add convenience methods when working with a list of `packagelister.Package` objects."""
@@ -57,6 +81,11 @@ class PackageList(list[Package]):
     def names(self) -> list[str]:
         """Returns a list of `Package.name` strings."""
         return [package.name for package in self]
+
+    @property
+    def distribution_names(self) -> list[str | None]:
+        """Returns a list of `Package.distribution_name` strings for third party packages in this list."""
+        return [package.distribution_name for package in self.third_party]
 
     @property
     def third_party(self) -> Self:

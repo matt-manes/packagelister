@@ -30,6 +30,14 @@ def test__Package():
     )
 
 
+def test__Package_from_distribution():
+    package = packagelister.Package.from_distribution_name("pathier")
+    assert package.name == ""
+    assert package.distribution_name == "pathier"
+    assert package.version
+    assert not package.builtin
+
+
 def test__get_package_names_from_source():
     file = test_path
     package_names = packagelister.get_package_names_from_source(file.read_text())
@@ -47,6 +55,8 @@ def test__packagelister_scan_file():
     for package in scanned_file.packages.builtin.names:
         assert package in builtins
     for package in scanned_file.packages.third_party.names:
+        assert package in third_partys
+    for package in scanned_file.packages.third_party.distribution_names:
         assert package in third_partys
 
 
