@@ -1,12 +1,108 @@
 import ast
 import importlib.metadata
 import sys
+from dataclasses import dataclass
 
 from pathier import Pathier, Pathish
 from printbuddies import ProgBar
+from typing_extensions import Self
+
+packages_distributions = importlib.metadata.packages_distributions()
 
 
-def get_packages_from_source(source: str) -> list[str]:
+def is_builtin(package_name: str) -> bool:
+    return package_name in sys.stdlib_module_names
+
+
+@dataclass
+class Package:
+    name: str
+    distribution_name: str | None
+    version: str | None
+    builtin: bool
+
+    def format_requirement(self, version_specifier: str):
+        return f"{self.distribution_name}{version_specifier}{self.version}"
+
+    @classmethod
+    def from_name(cls, package_name: str) -> Self:
+        distributions = packages_distributions.get(package_name)
+        if distributions:
+            distribution_name = distributions[0]
+            version = importlib.metadata.version(distribution_name)
+        else:
+            distribution_name = None
+            version = None
+        return cls(package_name, distribution_name, version, is_builtin(package_name))
+
+
+class PackageList(list[Package]):
+    @property
+    def names(self) -> list[str]:
+        return [package.name for package in self]
+
+    @property
+    def third_party(self) -> Self:
+        return self.__class__(
+            [
+                package
+                for package in self
+                if not package.builtin and package.distribution_name
+            ]
+        )
+
+    @property
+    def builtin(self) -> Self:
+        return self.__class__([package for package in self if package.builtin])
+
+
+@dataclass
+class File:
+    path: Pathier
+    packages: PackageList
+
+
+@dataclass
+class Project:
+    files: list[File]
+
+    @property
+    def unique_packages(self) -> PackageList:
+        packages = []
+        for file in self.files:
+            for package in file.packages:
+                if package not in packages:
+                    packages.append(package)
+        return PackageList(sorted(packages, key=lambda p: p.name))
+
+    @property
+    def requirements(self) -> PackageList:
+        return self.unique_packages.third_party
+
+    def get_formatted_requirements(
+        self, version_specifier: str | None = None
+    ) -> list[str]:
+        return [
+            requirement.format_requirement(version_specifier)
+            if version_specifier
+            else requirement.distribution_name or requirement.name
+            for requirement in self.requirements
+        ]
+
+    def get_files_by_package(self) -> dict[Package, list[Pathier]]:
+        files_by_package = {}
+        for package in self.unique_packages:
+            for file in self.files:
+                name = package.name
+                if name in file.packages.names:
+                    if name not in files_by_package:
+                        files_by_package[name] = [file.path]
+                    else:
+                        files_by_package[name].append(file.path)
+        return files_by_package
+
+
+def get_package_names_from_source(source: str) -> list[str]:
     """Scan `source` and extract the names of imported packages/modules."""
     tree = ast.parse(source)
     packages = []
@@ -14,9 +110,9 @@ def get_packages_from_source(source: str) -> list[str]:
         type_ = type(node)
         package = ""
         if type_ == ast.Import:
-            package = node.names[0].name
+            package = node.names[0].name  # type: ignore
         elif type_ == ast.ImportFrom:
-            package = node.module
+            package = node.module  # type: ignore
         if package:
             if "." in package:
                 package = package[: package.find(".")]
@@ -24,67 +120,27 @@ def get_packages_from_source(source: str) -> list[str]:
     return sorted(list(set(packages)))
 
 
-def remove_builtins(packages: list[str]) -> list[str]:
-    """Remove built in packages/modules from a list of package names."""
-    builtins = list(sys.stdlib_module_names)
-    return filter(lambda x: x not in builtins, packages)
+def scan_file(file: Pathish) -> File:
+    file = Pathier(file) if not type(file) == Pathier else file
+    source = file.read_text(encoding="utf-8")
+    packages = get_package_names_from_source(source)
+    used_packages = PackageList(
+        [
+            Package.from_name(package)
+            for package in packages
+            if package
+            not in file.parts  # don't want to pick up modules in the scanned directory
+        ]
+    )
+    return File(file, used_packages)
 
 
-def scan(project_dir: Pathish = None, include_builtins: bool = False) -> dict:
-    """Recursively scans a directory for python files to determine
-    what packages are in use, as well as the version number if applicable.
-
-    Returns a dictionary where the keys are package names and
-    the values are dictionaries with the keys `version` for the version number of the package
-    if there is one (None if there isn't) and `files` for a list of the files that import the package.
-
-    :param project_dir: Can be an absolute or relative path to a directory or a single file (.py).
-    If it is relative, it will be assumed to be relative to the current working directory.
-    If an argument isn't given, the current working directory will be scanned.
-    If the path doesn't exist, an empty dictionary is returned."""
-    if not project_dir:
-        project_dir = Pathier.cwd()
-    elif type(project_dir) is str or project_dir.is_file():
-        project_dir = Pathier(project_dir)
-    if not project_dir.is_absolute():
-        project_dir = project_dir.absolute()
-
-    # Raise error if project_dir doesn't exist
-    if not project_dir.exists():
-        raise FileNotFoundError(
-            f"Can't scan directory that doesn't exist: {project_dir}"
+def scan_dir(path: Pathish) -> Project:
+    path = Pathier(path) if not type(path) == Pathier else path
+    files = list(path.rglob("*.py"))
+    print(f"Scanning {path}...")
+    with ProgBar(len(files)) as bar:
+        project = Project(
+            [bar.display(return_object=scan_file(file)) for file in files]
         )
-    # You can scan a non python file one at a time if you reeeally want to.
-    if project_dir.is_file():
-        files = [project_dir]
-    else:
-        files = list(project_dir.rglob("*.py"))
-
-    bar = ProgBar(len(files), width_ratio=0.33)
-    used_packages = {}
-    for file in files:
-        bar.display(suffix=f"Scanning {file.name}")
-        source = file.read_text(encoding="utf-8")
-        packages = get_packages_from_source(source)
-        if not include_builtins:
-            packages = remove_builtins(packages)
-        for package in packages:
-            if file.with_stem(package) not in files:
-                if (
-                    package in used_packages
-                    and str(file) not in used_packages[package]["files"]
-                ):
-                    used_packages[package]["files"].append(str(file))
-                else:
-                    try:
-                        package_version = importlib.metadata.version(package)
-                    except ModuleNotFoundError:
-                        package_version = None
-                    except Exception as e:
-                        print(e)
-                        package_version = None
-                    used_packages[package] = {
-                        "files": [str(file)],
-                        "version": package_version,
-                    }
-    return used_packages
+    return project

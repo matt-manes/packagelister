@@ -1,38 +1,43 @@
 import pytest
-from pathier import Pathier
+from pathier import Pathier, Pathish
+
+root = Pathier(__file__).parent
 
 import packagelister
 
-
-def test_packagelister_scan():
-    print()
-    packages = packagelister.scan(Pathier(__file__).parent.parent / "src")
-    assert "printbuddies" in packages
-    assert "importlib" not in packages
-    assert "sys" not in packages
-    assert "pathier" in packages
-    assert "argparse" not in packages
-    assert "packagelister" not in packages
-    packages = packagelister.scan(Pathier(__file__).parent.parent / "src", True)
-    assert "printbuddies" in packages
-    assert "importlib" in packages
-    assert "sys" in packages
-    assert "pathier" in packages
-    assert "argparse" in packages
-    assert "packagelister" not in packages
+# List of packages imported by packagelister.py
+builtins = ["ast", "importlib", "sys", "dataclasses"]
+third_partys = ["pathier", "printbuddies", "typing_extensions"]
+imports = builtins + third_partys
+num_packages = len(imports)
 
 
-def test__get_packages_from_source():
-    print()
-    text = (
-        Pathier(__file__).parent.parent / "src" / "packagelister" / "packagelister.py"
-    ).read_text()
-    packages = packagelister.get_packages_from_source(text)
-    for package in [
-        "importlib",
-        "ast",
-        "pathier",
-        "printbuddies",
-        "sys",
-    ]:
-        assert package in packages
+def test__get_package_names_from_source():
+    file = root.parent / "src" / "packagelister" / "packagelister.py"
+    package_names = packagelister.get_package_names_from_source(file.read_text())
+    assert len(package_names) == num_packages
+    for package in imports:
+        assert package in package_names
+
+
+def test__packagelister_scan_file():
+    file = root.parent / "src" / "packagelister" / "packagelister.py"
+    scanned_file = packagelister.scan_file(file)
+    assert len(scanned_file.packages) == num_packages
+    for package in scanned_file.packages.names:
+        assert package in imports
+    for package in scanned_file.packages.builtin.names:
+        assert package in builtins
+    for package in scanned_file.packages.third_party.names:
+        assert package in third_partys
+
+
+def test__packagelister_scan_dir():
+    path = root.parent
+    project = packagelister.scan_dir(path)
+    files = path.rglob("*.py")
+    assert all(file.path in files for file in project.files)
+    assert len(project.requirements) == len(third_partys + ["pytest"])
+    print(project.get_formatted_requirements("=="))
+    assert project.get_formatted_requirements() == sorted(third_partys + ["pytest"])
+    print(project.get_files_by_package())

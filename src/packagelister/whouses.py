@@ -2,7 +2,7 @@ import argparse
 
 from pathier import Pathier
 
-from packagelister import scan
+import packagelister
 
 
 def get_args() -> argparse.Namespace:
@@ -18,7 +18,7 @@ def get_args() -> argparse.Namespace:
         "-i",
         "--ignore",
         nargs="*",
-        default=["pkgs", "envs"],
+        default=[],
         type=str,
         help=""" Ignore these folders. """,
     )
@@ -34,7 +34,7 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     for project in root.iterdir():
         if project.is_dir() and project.stem not in ignore:
             try:
-                if package in scan(project):
+                if package in packagelister.scan_dir(project).unique_packages.names:
                     package_users.append(project.stem)
             except Exception as e:
                 err = str(e)
@@ -51,7 +51,7 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     return package_users
 
 
-def main(args: argparse.Namespace = None):
+def main(args: argparse.Namespace | None = None):
     if not args:
         args = get_args()
     package_users = find(Pathier.cwd(), args.package, args.ignore)
