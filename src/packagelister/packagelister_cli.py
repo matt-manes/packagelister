@@ -2,7 +2,7 @@ import argparse
 
 from pathier import Pathier
 
-import packagelister
+from packagelister import packagelister
 
 
 def get_args() -> argparse.Namespace:

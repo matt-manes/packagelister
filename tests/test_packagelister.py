@@ -3,17 +3,35 @@ from pathier import Pathier, Pathish
 
 root = Pathier(__file__).parent
 
-import packagelister
+from packagelister import packagelister
 
 # List of packages imported by packagelister.py
 builtins = ["ast", "importlib", "sys", "dataclasses"]
 third_partys = ["pathier", "printbuddies", "typing_extensions"]
 imports = builtins + third_partys
 num_packages = len(imports)
+test_path = root.parent / "src" / "packagelister" / "packagelister.py"
+
+
+def test__is_builtin():
+    assert packagelister.is_builtin("sys")
+    assert not packagelister.is_builtin("pathier")
+
+
+def test__Package():
+    package = packagelister.Package.from_name("pathier")
+    assert package.name == "pathier"
+    assert package.distribution_name == "pathier"
+    assert package.version
+    assert not package.builtin
+    assert (
+        package.format_requirement("==")
+        == f"{package.distribution_name}=={package.version}"
+    )
 
 
 def test__get_package_names_from_source():
-    file = root.parent / "src" / "packagelister" / "packagelister.py"
+    file = test_path
     package_names = packagelister.get_package_names_from_source(file.read_text())
     assert len(package_names) == num_packages
     for package in imports:
@@ -21,7 +39,7 @@ def test__get_package_names_from_source():
 
 
 def test__packagelister_scan_file():
-    file = root.parent / "src" / "packagelister" / "packagelister.py"
+    file = test_path
     scanned_file = packagelister.scan_file(file)
     assert len(scanned_file.packages) == num_packages
     for package in scanned_file.packages.names:
