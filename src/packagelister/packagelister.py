@@ -30,7 +30,7 @@ class Package:
     version: str | None
     builtin: bool
 
-    def format_requirement(self, version_specifier: str):
+    def get_formatted_requirement(self, version_specifier: str):
         """Returns a string of the form `{self.distribution_name}{version_specifier}{self.version}`.
         e.g for this package: `"packagelister>=2.0.0"`"""
         return f"{self.distribution_name}{version_specifier}{self.version}"
@@ -120,7 +120,7 @@ class Project:
         If no `version_specifier` is given, the returned list will just be package names.
         """
         return [
-            requirement.format_requirement(version_specifier)
+            requirement.get_formatted_requirement(version_specifier)
             if version_specifier
             else requirement.distribution_name or requirement.name
             for requirement in self.requirements

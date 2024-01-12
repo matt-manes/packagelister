@@ -25,7 +25,7 @@ def test__Package():
     assert package.version
     assert not package.builtin
     assert (
-        package.format_requirement("==")
+        package.get_formatted_requirement("==")
         == f"{package.distribution_name}=={package.version}"
     )
 
