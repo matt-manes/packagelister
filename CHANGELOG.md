@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.1 (2024-02-18)
+
+#### Refactorings
+
+* improve type annotation coverage
+* update printbuddies usage
+
+
 ## v2.0.0 (2024-01-12)
 
 #### New Features
