@@ -129,7 +129,7 @@ class Project:
     @property
     def packages(self) -> PackageList:
         """Returns a `packagelister.PackageList` object for this instance with no duplicates."""
-        packages = []
+        packages: list[Package] = []
         for file in self.files:
             for package in file.packages:
                 if package not in packages:
@@ -159,7 +159,7 @@ class Project:
 
     def get_files_by_package(self) -> dict[str, list[Pathier]]:
         """Returns a dictionary where the keys are package names and the values are lists of files that import the package."""
-        files_by_package = {}
+        files_by_package: dict[str, list[Pathier]] = {}
         for package in self.packages:
             for file in self.files:
                 name = package.name
@@ -174,18 +174,18 @@ class Project:
 def get_package_names_from_source(source: str) -> list[str]:
     """Scan `source` and extract the names of imported packages/modules."""
     tree = ast.parse(source)
-    packages = []
+    packages: list[str] = []
     for node in ast.walk(tree):
         type_ = type(node)
-        package = ""
+        package: str = ""
         if type_ == ast.Import:
             package = node.names[0].name  # type: ignore
         elif type_ == ast.ImportFrom:
             package = node.module  # type: ignore
         if package:
             if "." in package:
-                package = package[: package.find(".")]
-            packages.append(package)
+                package = package[: package.find(".")]  # type: ignore
+            packages.append(package)  # type: ignore
     return sorted(list(set(packages)))
 
 

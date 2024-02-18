@@ -34,8 +34,8 @@ def get_args() -> argparse.Namespace:
 
 def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     """Find what sub-folders of `root`, excluding those in `ignore`, have files that use `package`."""
-    package_users = []
-    scan_fails = {}  # Error message: [projects]
+    package_users: list[str] = []
+    scan_fails: dict[str, list[Pathier]] = {}  # Error message: [projects]
     projects = [
         path
         for path in track(root.iterdir(), "Scanning for projects...")
