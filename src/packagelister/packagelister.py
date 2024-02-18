@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 
 from pathier import Pathier, Pathish
-from printbuddies import ProgBar
+from printbuddies import track
 from typing_extensions import Self
 
 # figured it's more efficient to have this on hand than calling the function everytime I need the mapping
@@ -149,9 +149,11 @@ class Project:
         If no `version_specifier` is given, the returned list will just be package names.
         """
         return [
-            requirement.get_formatted_requirement(version_specifier)
-            if version_specifier
-            else requirement.distribution_name or requirement.name
+            (
+                requirement.get_formatted_requirement(version_specifier)
+                if version_specifier
+                else requirement.distribution_name or requirement.name
+            )
             for requirement in self.requirements
         ]
 
@@ -214,8 +216,5 @@ def scan_dir(path: Pathish, quiet: bool = False) -> Project:
     else:
         num_files = len(files)
         print(f"Scanning {num_files} files in {path} for imports...")
-        with ProgBar(len(files), width_ratio=0.3) as bar:
-            project = Project(
-                [bar.display(return_object=scan_file(file)) for file in files]
-            )
+        project = Project([scan_file(file) for file in track(files)])
     return project
