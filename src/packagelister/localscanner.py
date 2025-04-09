@@ -1,3 +1,4 @@
+import ast
 from collections import deque
 
 import argshell
@@ -6,11 +7,63 @@ from printbuddies import track
 from rich import print
 from rich.tree import Tree
 
-from packagelister import packagelister
+
+def get_module_names_from_source(source: str) -> list[str]:
+    """Returns a list of objects imported by `source`."""
+    tree = ast.parse(source)
+    modules: list[str] = []
+    for node in ast.walk(tree):
+        type_ = type(node)
+        if type_ in [ast.Import, ast.ImportFrom]:
+            for name in node.names:  # type:ignore
+                modules.extend(name.name.split("."))  # type:ignore
+            if type_ == ast.ImportFrom:
+                modules.extend(node.module.split("."))  # type:ignore
+    return sorted(list(set(modules)))
 
 
-class LocalDependencyScanner:
+class LocalImportScanner:
+    """Scan a given directory for information about its local module import structure.
+    After scanning, the `import_graph` property is a dict with the structure:
+    `{module: [modules_that_import_module]}`
+
+    For all tree functions, a module at a given depth imports the module above it.
+
+    >>> from packagelister import LocalImportScanner
+    >>> from rich import print
+    >>> scanner = LocalImportScanner("C:/python/gruel", True)
+    >>> scanner.scan()
+    Scanning files... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  0s
+    >>> print(scanner.import_graph)
+    {'core': {'brewer', 'crawler'}, 'requests': {'core', 'crawler'}, 'models': {'crawler', 'test_models'}}
+    >>> print(scanner.get_import_tree())
+    Import tree
+    ├── core
+    │   ├── brewer
+    │   └── crawler
+    ├── requests
+    │   ├── core
+    │   │   ├── brewer
+    │   │   └── crawler
+    │   └── crawler
+    └── models
+        ├── crawler
+        └── test_models
+    >>> print(scanner.get_module_tree("requests"))
+    Imports requests
+    ├── core
+    │   ├── brewer
+    │   └── crawler
+    └── crawler
+    >>> print(scanner.get_refactor_order())
+    deque(['models', 'test_models', 'requests', 'core', 'crawler', 'brewer'])
+    """
+
     def __init__(self, path: Pathier | Pathish | None = None, recursive: bool = False):
+        """`path`: The root path to scan. If `None`, the current directory is used.
+
+        `recursive`: Whether to scan recursively.
+        """
         self._root = Pathier.cwd() if not path else Pathier(path)
         self._globber = self._root.rglob if recursive else self._root.glob
         self._local_modules = self._get_local_module_names()
@@ -19,8 +72,6 @@ class LocalDependencyScanner:
     @property
     def import_graph(self) -> dict[str, set[str]]:
         """Returns a dictionary of local module names and a set of what local modules import them."""
-        if not self._imports:
-            self.scan()
         return self._imports
 
     def _get_local_module_names(self) -> list[str]:
@@ -42,24 +93,28 @@ class LocalDependencyScanner:
         """Scan the target directory for '.py' files and build the import graph of local modules."""
         self._imports = {}
         for f in track(self._globber("*.py"), "Scanning files..."):
+            # __init__ just adds useless info so skip it
+            if f.stem == "__init__":
+                continue
             try:
                 source = f.read_text(encoding="utf-8")
             except Exception as e:
                 print(e)
             else:
-                packages = packagelister.get_package_names_from_source(source)
-                for package in packages:
-                    if package in self._local_modules:
+                modules = get_module_names_from_source(source)
+                for module in modules:
+                    # Modules that import a module with the same name from a different package
+                    # cause recursion issues with the tree functions
+                    if module != f.stem and module in self._local_modules:
                         self._imports.setdefault(f.stem, set())
-                        self._imports[f.stem].add(package)
+                        self._imports[f.stem].add(module)
         # `_imports` is currently a module and the modules it imports
         # invert it so the key is a module and the values are modules that import it
         self.__invert_imports()
 
     def get_refactor_order(self) -> deque[str]:
         """Returns a possible ordering that modules can be modified such that,
-        when modifying a given file,
-        all files it imports have already been modified."""
+        when modifying a given file, all files it imports have already been modified."""
         visited: set[str] = set()
         stack: deque[str] = deque()
         if not self._imports:
@@ -83,7 +138,7 @@ class LocalDependencyScanner:
                 self._build_import_tree(importer, branch.add(importer))
 
     def get_module_tree(self, module: str) -> Tree:
-        """Returns a tree representing local modules that import `module`."""
+        """Returns a `rich.tree.Tree` representing local modules that import `module`."""
         if not self._imports:
             self.scan()
         tree = Tree(f"Imports {module}", style="deep_pink1")
@@ -91,7 +146,7 @@ class LocalDependencyScanner:
         return tree
 
     def get_import_tree(self) -> Tree:
-        """Returns a tree representing local module import structure."""
+        """Returns a `rich.tree.Tree` representing local module import structure."""
         if not self._imports:
             self.scan()
         tree = Tree(f"Import tree", style="deep_pink1")
@@ -107,7 +162,7 @@ class LocalDependencyScanner:
             self._build_order_tree(submodule, subbranch)
 
     def get_order_tree(self, stack: deque[str]) -> Tree:
-        """Returns a full tree representing a refactoring order."""
+        """Returns a `rich.tree.Tree` representing a refactoring order."""
         if not self._imports:
             self.scan()
         tree = Tree("Refactor order", style="deep_pink1")
@@ -187,12 +242,11 @@ def get_args() -> argshell.Namespace:
 def main(args: argshell.Namespace | None = None):
     if not args:
         args = get_args()
-    scanner = LocalDependencyScanner(None, args.recursive)
+    scanner = LocalImportScanner(None, args.recursive)
     scanner.scan()
-    if args.tree and not args.order:
-        print(scanner.get_import_tree())
-    elif args.module:
-        print(scanner.get_module_tree(args.module))
+    if not scanner.import_graph:
+        print("No local imports found.")
+        exit()
     elif args.order:
         s = scanner.get_refactor_order()
         if not args.tree:
@@ -200,11 +254,13 @@ def main(args: argshell.Namespace | None = None):
             print(*s, sep="\n")
         else:
             print(scanner.get_order_tree(s))
+    elif args.tree:
+        print(scanner.get_import_tree())
+    elif args.module:
+        print(scanner.get_module_tree(args.module))
     elif args.unimported:
         print("Unimported modules:")
         print(*scanner.get_unimported_modules(), sep="\n")
-    else:
-        print(get_parser().print_help())
 
 
 if __name__ == "__main__":
