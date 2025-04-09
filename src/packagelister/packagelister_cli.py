@@ -1,15 +1,15 @@
-import argparse
-
+import argshell
 from pathier import Pathier
 
 from packagelister import packagelister
 
 
-def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+def get_args() -> argshell.Namespace:
+    parser = argshell.ArgumentParser(
         prog="packagelister",
         description=""" Scan the current directory for imported packages. """,
     )
+    parser.add_help_preview()
 
     parser.add_argument(
         "-f",
@@ -54,7 +54,7 @@ def get_args() -> argparse.Namespace:
     return args
 
 
-def main(args: argparse.Namespace | None = None):
+def main(args: argshell.Namespace | None = None):
     if not args:
         args = get_args()
     project = packagelister.scan_dir(Pathier.cwd())

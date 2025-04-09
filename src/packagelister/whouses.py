@@ -1,17 +1,18 @@
-import argparse
-
+import argshell
 from pathier import Pathier
 from printbuddies import Progress, track
 
 from packagelister import packagelister
 
 
-def get_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
+def get_args() -> argshell.Namespace:
+    parser = argshell.ArgumentParser(
         prog="whouses",
         description=""" Determine what sub-folders in the current directory use the specified package.
         Useful for knowing which projects need to be updated when upgrading an installed package.""",
     )
+
+    parser.add_help_preview()
 
     parser.add_argument(
         "package",
@@ -66,7 +67,7 @@ def find(root: Pathier, package: str, ignore: list[str] = []) -> list[str]:
     return package_users
 
 
-def main(args: argparse.Namespace | None = None):
+def main(args: argshell.Namespace | None = None):
     if not args:
         args = get_args()
     package_users = find(
