@@ -7,7 +7,11 @@ from packagelister import packagelister
 
 # List of packages imported by packagelister.py
 builtins = ["ast", "importlib", "sys", "dataclasses"]
-third_partys = ["pathier", "printbuddies", "typing_extensions"]
+third_partys = [
+    "pathier",
+    "printbuddies",
+    "typing_extensions",
+]
 imports = builtins + third_partys
 num_packages = len(imports)
 test_path = root.parent / "src" / "packagelister" / "packagelister.py"
@@ -64,8 +68,11 @@ def test__packagelister_scan_dir():
     path = root.parent
     project = packagelister.scan_dir(path)
     files = path.rglob("*.py")
+    other_third_party = ["pytest", "rich", "argshell"]
     assert all(file.path in files for file in project.files)
-    assert len(project.requirements) == len(third_partys + ["pytest"])
+    assert len(project.requirements) == len(third_partys + other_third_party)
     print(project.get_formatted_requirements("=="))
-    assert project.get_formatted_requirements() == sorted(third_partys + ["pytest"])
+    assert project.get_formatted_requirements() == sorted(
+        third_partys + other_third_party
+    )
     print(project.get_files_by_package())
