@@ -216,5 +216,5 @@ def scan_dir(path: Pathish, quiet: bool = False) -> Project:
     else:
         num_files = len(files)
         print(f"Scanning {num_files} files in {path} for imports...")
-        project = Project([scan_file(file) for file in track(files)])
+        project = Project([scan_file(file) for file in track(files, "")])
     return project
