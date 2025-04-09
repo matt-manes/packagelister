@@ -13,7 +13,7 @@ class LocalDependencyScanner:
     def __init__(self, path: Pathier | Pathish | None = None, recursive: bool = False):
         self._root = Pathier.cwd() if not path else Pathier(path)
         self._globber = self._root.rglob if recursive else self._root.glob
-        self._local_modules = self._gather_local_module_names()
+        self._local_modules = self._get_local_module_names()
         self._imports: dict[str, set[str]] = {}
 
     @property
@@ -23,10 +23,14 @@ class LocalDependencyScanner:
             self.scan()
         return self._imports
 
-    def _gather_local_module_names(self) -> list[str]:
+    def _get_local_module_names(self) -> list[str]:
         return [path.stem for path in self._globber("*.py")]
 
-    def _invert(self):
+    def __invert_imports(self):
+        """After running the scan, `_imports` will have keys that are the importing modules
+        and values that are the modules it imports.
+        This reconstructs the dict so that the keys are modules and the values
+        are modules that import the key."""
         inverted: dict[str, set[str]] = {}
         for module, deps in self._imports.items():
             for dep in deps:
@@ -50,7 +54,7 @@ class LocalDependencyScanner:
                         self._imports[f.stem].add(package)
         # `_imports` is currently a module and the modules it imports
         # invert it so the key is a module and the values are modules that import it
-        self._invert()
+        self.__invert_imports()
 
     def get_refactor_order(self) -> deque[str]:
         """Returns a possible ordering that modules can be modified such that,
@@ -73,12 +77,17 @@ class LocalDependencyScanner:
                     self._dfs(neighbor, visited, stack)
             stack.appendleft(node)
 
+    def _build_import_tree(self, module: str, branch: Tree):
+        if module in self._imports:
+            for importer in self._imports[module]:
+                self._build_import_tree(importer, branch.add(importer))
+
     def get_module_tree(self, module: str) -> Tree:
         """Returns a tree representing local modules that import `module`."""
         if not self._imports:
             self.scan()
         tree = Tree(f"Imports {module}", style="deep_pink1")
-        self._build_tree_r(module, tree)
+        self._build_import_tree(module, tree)
         return tree
 
     def get_import_tree(self) -> Tree:
@@ -87,13 +96,15 @@ class LocalDependencyScanner:
             self.scan()
         tree = Tree(f"Import tree", style="deep_pink1")
         for module in self._imports:
-            self._build_tree_r(module, tree.add(module))
+            self._build_import_tree(module, tree.add(module))
         return tree
 
-    def _build_tree_r(self, module: str, branch: Tree):
-        if module in self._imports:
-            for importer in self._imports[module]:
-                self._build_tree_r(importer, branch.add(importer))
+    def _build_order_tree(self, module: str, branch: Tree):
+        subbranch = branch.add(module)
+        if module not in self._imports:
+            return
+        for submodule in self._imports[module]:
+            self._build_order_tree(submodule, subbranch)
 
     def get_order_tree(self, stack: deque[str]) -> Tree:
         """Returns a full tree representing a refactoring order."""
@@ -101,15 +112,8 @@ class LocalDependencyScanner:
             self.scan()
         tree = Tree("Refactor order", style="deep_pink1")
         for module in stack:
-            self._get_order_tree_r(module, tree)
+            self._build_order_tree(module, tree)
         return tree
-
-    def _get_order_tree_r(self, module: str, branch: Tree):
-        subbranch = branch.add(module)
-        if module not in self.import_graph:
-            return
-        for submodule in self.import_graph[module]:
-            self._get_order_tree_r(submodule, subbranch)
 
     def get_unimported_modules(self) -> list[str]:
         """Returns a list of local modules that aren't imported by any other modules."""
@@ -125,7 +129,7 @@ class LocalDependencyScanner:
 def get_parser() -> argshell.ArgumentParser:
     parser = argshell.ArgumentParser(
         description=""" 
-        List local modules in an order such that, when refactoring a given module, the modules it imports will have already been refactored.
+        Provide details about local module imports.
         """
     )
     parser.add_help_preview()

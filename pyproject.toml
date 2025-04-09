@@ -20,7 +20,7 @@ Documentation = "https://github.com/matt-manes/packagelister/tree/main/docs"
 [project.scripts]
 packagelister = "packagelister.packagelister_cli:main"
 whouses = "packagelister.whouses:main"
-localdeps = "packagelister.localscanner:main"
+localimps = "packagelister.localscanner:main"
 
 [tool]
 [tool.pytest.ini_options]
