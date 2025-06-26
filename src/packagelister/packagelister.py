@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathier import Pathier, Pathish
 from printbuddies import track
 from typing_extensions import Self
+from younotyou import younotyou
 
 # figured it's more efficient to have this on hand than calling the function everytime I need the mapping
 packages_distributions = importlib.metadata.packages_distributions()
@@ -205,12 +206,30 @@ def scan_file(file: Pathish) -> File:
     return File(file, used_packages)
 
 
-def scan_dir(path: Pathish, quiet: bool = False) -> Project:
-    """Recursively scan `*.py` files in `path` for imports and return a `packagelister.Project` instance.
+def scan_dir(path: Pathish, quiet: bool = False, excludes: list[str] = []) -> Project:
+    """
+    Recursively scan the given directory for `.py` files and determine their imports
 
-    Set `quiet` to `False` to prevent printing."""
+    Args:
+        path (Pathish): The directory to scan.
+        quiet (bool, optional): Suppress progress bar. Defaults to False.
+        excludes (list[str], optional): A list of wildcard patterns for files to exclude from the scan. Defaults to [].
+
+    Returns:
+        Project: Object representing the scanned project.
+    """
     path = Pathier(path) if not type(path) == Pathier else path
     files = list(path.rglob("*.py"))
+    if excludes:
+        # Converting to relative and back to absolute
+        # so that `excludes` don't need to prefixed with '*'
+        files = [
+            Pathier(f).absolute()
+            for f in younotyou(
+                (str(file.relative_to(path)) for file in files),
+                exclude_patterns=excludes,
+            )
+        ]
     if quiet:
         project = Project([scan_file(file) for file in files])
     else:

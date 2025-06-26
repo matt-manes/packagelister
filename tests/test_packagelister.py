@@ -7,11 +7,7 @@ from packagelister import packagelister
 
 # List of packages imported by packagelister.py
 builtins = ["ast", "importlib", "sys", "dataclasses"]
-third_partys = [
-    "pathier",
-    "printbuddies",
-    "typing_extensions",
-]
+third_partys = ["pathier", "printbuddies", "typing_extensions", "younotyou"]
 imports = builtins + third_partys
 num_packages = len(imports)
 test_path = root.parent / "src" / "packagelister" / "packagelister.py"

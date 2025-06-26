@@ -49,6 +49,15 @@ def get_args() -> argshell.Namespace:
         help=""" Print the Package objects found during the scan. """,
     )
 
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        nargs="*",
+        type=str,
+        default=[],
+        help=""" Wildcard patterns to exclude from scan.""",
+    )
+
     args = parser.parse_args()
 
     return args
@@ -57,7 +66,7 @@ def get_args() -> argshell.Namespace:
 def main(args: argshell.Namespace | None = None):
     if not args:
         args = get_args()
-    project = packagelister.scan_dir(Pathier.cwd())
+    project = packagelister.scan_dir(Pathier.cwd(), excludes=args.exclude)
     print(f"Packages imported by {Pathier.cwd().stem}:")
     print(
         *(
