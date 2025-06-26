@@ -1,8 +1,8 @@
 [project]
 name = "packagelister"
 description = "Determine what 3rd-party packages a project imports."
-version = "2.1.0"
-dependencies = ["pathier>=1.3.4", "printbuddies>=1.4.1", "typing_extensions>=4.7.1", "argshell", "rich"]
+version = "2.2.0"
+dependencies = ["pathier>=1.3.4", "printbuddies>=1.4.1", "typing_extensions>=4.7.1", "argshell", "rich", "younotyou"]
 readme = "README.md"
 keywords = ["package", "import", "module"]
 classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"]
