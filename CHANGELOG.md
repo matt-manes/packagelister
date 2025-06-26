@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.2.0 (2025-06-26)
+
+#### New Features
+
+* add excludes option to cli and `scan_dir()`
+
 ## v2.1.0 (2025-04-09)
 
 #### New Features
